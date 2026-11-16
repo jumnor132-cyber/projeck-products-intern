@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../utils/cart";
+import { useTheme } from "../utils/theme";
 import ShopHeader from "../components/ShopHeader";
 import ShopFooter from "../components/ShopFooter";
 
 export default function Cart() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { cart, totalQuantity, subtotal, updateCartQuantity, removeFromCart, clearCart } =
     useCart();
 
@@ -91,14 +94,18 @@ export default function Cart() {
       </section>
 
       {/* Cart Content */}
-      <section style={{ padding: "36px 24px 70px", background: "#f8fafc" }}>
+      <section style={{ padding: "36px 24px 70px", background: isDark ? "#0b1120" : "#f8fafc" }}>
         <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
           {/* Free Shipping Progress Meter */}
           {cart.length > 0 && (
             <div
               style={{
-                background: isFreeShipping ? "#ecfdf5" : "#ffffff",
-                border: isFreeShipping ? "1.5px solid #a7f3d0" : "1px solid #e2e8f0",
+                background: isFreeShipping
+                  ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5")
+                  : (isDark ? "#131d31" : "#ffffff"),
+                border: isFreeShipping
+                  ? "1.5px solid #059669"
+                  : (isDark ? "1px solid #1e293b" : "1px solid #e2e8f0"),
                 borderRadius: "16px",
                 padding: "16px 22px",
                 marginBottom: "26px",
@@ -111,7 +118,9 @@ export default function Cart() {
                   justifyContent: "space-between",
                   fontSize: "13.5px",
                   fontWeight: "700",
-                  color: isFreeShipping ? "#065f46" : "#334155",
+                  color: isFreeShipping
+                    ? (isDark ? "#34d399" : "#065f46")
+                    : (isDark ? "#cbd5e1" : "#334155"),
                   marginBottom: "8px",
                 }}
               >
@@ -129,7 +138,7 @@ export default function Cart() {
                 style={{
                   height: "8px",
                   width: "100%",
-                  background: "#e2e8f0",
+                  background: isDark ? "#1e293b" : "#e2e8f0",
                   borderRadius: "10px",
                   overflow: "hidden",
                 }}
@@ -159,10 +168,10 @@ export default function Cart() {
             }}
           >
             <div>
-              <h2 style={{ fontSize: "22px", fontWeight: "900", color: "#0f172a", margin: 0 }}>
+              <h2 style={{ fontSize: "22px", fontWeight: "900", color: isDark ? "#f8fafc" : "#0f172a", margin: 0 }}>
                 មុខទំនិញក្នុងកន្ត្រក ({cart.length} មុខ)
               </h2>
-              <span style={{ fontSize: "13px", color: "#64748b" }}>
+              <span style={{ fontSize: "13px", color: isDark ? "#94a3b8" : "#64748b" }}>
                 សរុប {totalQuantity} ឯកតាក្នុងកន្ត្រក
               </span>
             </div>
@@ -211,16 +220,16 @@ export default function Cart() {
               style={{
                 textAlign: "center",
                 padding: "70px 20px",
-                background: "#ffffff",
+                background: isDark ? "#131d31" : "#ffffff",
                 borderRadius: "20px",
-                border: "1px solid #e2e8f0",
+                border: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
               }}
             >
               <div style={{ fontSize: "64px", marginBottom: "16px" }}>🧺</div>
-              <h2 style={{ fontSize: "22px", fontWeight: "900", color: "#0f172a", marginBottom: "8px" }}>
+              <h2 style={{ fontSize: "22px", fontWeight: "900", color: isDark ? "#f8fafc" : "#0f172a", marginBottom: "8px" }}>
                 កន្ត្រកទំនិញរបស់អ្នកទទេស្អាត
               </h2>
-              <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px" }}>
+              <p style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "14px", marginBottom: "24px", maxWidth: "400px", margin: "0 auto 24px" }}>
                 មិនទាន់មានទំនិញក្នុងកន្ត្រកនៅឡើយទេ។ សូមជ្រើសរើសទំនិញស្រស់ៗដែលអ្នកពេញចិត្ត!
               </p>
               <Link
@@ -247,13 +256,20 @@ export default function Cart() {
               {/* Product List */}
               <div
                 style={{
-                  background: "#ffffff",
+                  background: isDark ? "#131d31" : "#ffffff",
                   borderRadius: "18px",
-                  border: "1px solid #e2e8f0",
+                  border: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
                   overflow: "hidden",
                 }}
               >
-                <div className="cart-table-heading" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                <div
+                  className="cart-table-heading"
+                  style={{
+                    background: isDark ? "#1e293b" : "#f8fafc",
+                    borderBottom: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+                    color: isDark ? "#94a3b8" : "#64748b",
+                  }}
+                >
                   <span>ទំនិញ (PRODUCT)</span>
                   <span>តម្លៃឯកតា (PRICE)</span>
                   <span>ចំនួន (QUANTITY)</span>
@@ -264,7 +280,7 @@ export default function Cart() {
                   <div
                     key={item.id}
                     className="cart-item"
-                    style={{ borderBottom: "1px solid #f1f5f9" }}
+                    style={{ borderBottom: isDark ? "1px solid #1e293b" : "1px solid #f1f5f9" }}
                   >
                     <div className="cart-product">
                       <img
@@ -275,8 +291,8 @@ export default function Cart() {
                           height: "72px",
                           objectFit: "cover",
                           borderRadius: "12px",
-                          border: "1px solid #e2e8f0",
-                          background: "#f1f5f9",
+                          border: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+                          background: isDark ? "#1e293b" : "#f1f5f9",
                         }}
                         onError={(e) => {
                           e.target.src =
@@ -290,7 +306,7 @@ export default function Cart() {
                             fontSize: "11px",
                             fontWeight: "800",
                             color: "#059669",
-                            background: "#ecfdf5",
+                            background: isDark ? "rgba(16,185,129,0.15)" : "#ecfdf5",
                             padding: "2px 6px",
                             borderRadius: "6px",
                             textTransform: "uppercase",
@@ -298,11 +314,11 @@ export default function Cart() {
                         >
                           {item.category} {item.unit ? `• ${item.unit}` : ""}
                         </span>
-                        <h4 style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", margin: "3px 0 4px" }}>
+                        <h4 style={{ fontSize: "14px", fontWeight: "800", color: isDark ? "#f8fafc" : "#0f172a", margin: "3px 0 4px" }}>
                           {item.name}
                         </h4>
                         {item.sku && (
-                          <div style={{ fontSize: "11px", color: "#94a3b8", fontFamily: "monospace", marginBottom: "4px" }}>
+                          <div style={{ fontSize: "11px", color: isDark ? "#64748b" : "#94a3b8", fontFamily: "monospace", marginBottom: "4px" }}>
                             BAR: {item.sku}
                           </div>
                         )}
@@ -324,7 +340,7 @@ export default function Cart() {
                       </div>
                     </div>
 
-                    <div style={{ fontWeight: "700", color: "#0f172a", fontSize: "14px" }}>
+                    <div style={{ fontWeight: "700", color: isDark ? "#cbd5e1" : "#0f172a", fontSize: "14px" }}>
                       ${Number(item.price).toFixed(2)}
                     </div>
 
@@ -336,7 +352,7 @@ export default function Cart() {
                       >
                         −
                       </button>
-                      <span style={{ padding: "0 10px", fontWeight: "800", fontSize: "14px" }}>
+                      <span style={{ padding: "0 10px", fontWeight: "800", fontSize: "14px", color: isDark ? "#f8fafc" : "#0f172a" }}>
                         {item.quantity || 1}
                       </span>
                       <button
@@ -360,13 +376,13 @@ export default function Cart() {
                 {/* Coupon Box */}
                 <div
                   style={{
-                    background: "#ffffff",
+                    background: isDark ? "#131d31" : "#ffffff",
                     borderRadius: "18px",
-                    border: "1px solid #e2e8f0",
+                    border: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
                     padding: "20px",
                   }}
                 >
-                  <h4 style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", marginBottom: "10px" }}>
+                  <h4 style={{ fontSize: "14px", fontWeight: "800", color: isDark ? "#f8fafc" : "#0f172a", marginBottom: "10px" }}>
                     🎟️ លេខកូដបញ្ចុះតម្លៃ (Voucher Coupon)
                   </h4>
                   <form onSubmit={handleApplyCoupon} style={{ display: "flex", gap: "8px" }}>
@@ -379,7 +395,9 @@ export default function Cart() {
                         flex: 1,
                         padding: "10px 14px",
                         borderRadius: "10px",
-                        border: "1.5px solid #cbd5e1",
+                        border: isDark ? "1.5px solid #334155" : "1.5px solid #cbd5e1",
+                        background: isDark ? "#0b1120" : "#ffffff",
+                        color: isDark ? "#f8fafc" : "#0f172a",
                         fontSize: "13px",
                         outline: "none",
                       }}
@@ -388,7 +406,7 @@ export default function Cart() {
                       type="submit"
                       style={{
                         padding: "10px 16px",
-                        background: "#0f172a",
+                        background: isDark ? "#059669" : "#0f172a",
                         color: "#ffffff",
                         borderRadius: "10px",
                         border: "none",
@@ -414,20 +432,20 @@ export default function Cart() {
                     </div>
                   )}
 
-                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+                  <div style={{ fontSize: "11px", color: isDark ? "#64748b" : "#94a3b8", marginTop: "8px" }}>
                     សាកល្បង: <code style={{ color: "#059669" }}>STYLE20</code> (បញ្ចុះ 20%) ឬ <code style={{ color: "#059669" }}>FREE</code> (បញ្ចុះ 10%)
                   </div>
                 </div>
 
                 {/* Summary Card */}
                 <div className="cart-summary">
-                  <h3 style={{ fontSize: "17px", fontWeight: "900", color: "#0f172a", marginBottom: "16px" }}>
+                  <h3 style={{ fontSize: "17px", fontWeight: "900", color: isDark ? "#f8fafc" : "#0f172a", marginBottom: "16px" }}>
                     សង្ខេបការបញ្ជាទិញ (Order Summary)
                   </h3>
 
                   <div className="cart-summary-row">
                     <span>តម្លៃទំនិញសរុប (Subtotal):</span>
-                    <strong>${subtotal.toFixed(2)}</strong>
+                    <strong style={{ color: isDark ? "#f8fafc" : "inherit" }}>${subtotal.toFixed(2)}</strong>
                   </div>
 
                   {discountPercent > 0 && (
@@ -442,18 +460,18 @@ export default function Cart() {
                     {shipping === 0 ? (
                       <span style={{ color: "#059669", fontWeight: "800" }}>ឥតគិតថ្លៃ (FREE)</span>
                     ) : (
-                      <strong>${shipping.toFixed(2)}</strong>
+                      <strong style={{ color: isDark ? "#f8fafc" : "inherit" }}>${shipping.toFixed(2)}</strong>
                     )}
                   </div>
 
                   <div className="cart-summary-total">
                     <div>
-                      <span>សរុបរួម (Grand Total):</span>
+                      <span style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>សរុបរួម (Grand Total):</span>
                       <div style={{ fontSize: "12px", color: "#059669", fontWeight: "700" }}>
                         ≈ {approxTotalRiel} ៛ (រៀល)
                       </div>
                     </div>
-                    <span style={{ fontSize: "26px", color: "#0f172a", fontWeight: "900" }}>
+                    <span style={{ fontSize: "26px", color: isDark ? "#f8fafc" : "#0f172a", fontWeight: "900" }}>
                       ${total.toFixed(2)}
                     </span>
                   </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart } from "../utils/cart";
 import { useMartProducts } from "../utils/products";
+import { useTheme } from "../utils/theme";
 import ShopHeader from "../components/ShopHeader";
 import ShopFooter from "../components/ShopFooter";
 import QuickViewModal from "../components/QuickViewModal";
@@ -9,6 +10,7 @@ import QuickViewModal from "../components/QuickViewModal";
 export default function Home() {
   const navigate = useNavigate();
   const { products, deleteProduct, resetProducts, categories } = useMartProducts();
+  const { isDark } = useTheme();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -176,7 +178,7 @@ export default function Home() {
   const currentSlide = HERO_SLIDES[heroSlide];
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${isDark ? "dark-theme" : ""}`}>
       {/* Toast Notification */}
       {toast && (
         <div
@@ -184,7 +186,7 @@ export default function Home() {
             position: "fixed",
             bottom: "28px",
             right: "28px",
-            background: "#0f172a",
+            background: isDark ? "#1e293b" : "#0f172a",
             color: "#ffffff",
             padding: "14px 22px",
             borderRadius: "14px",
@@ -193,7 +195,7 @@ export default function Home() {
             display: "flex",
             alignItems: "center",
             gap: "14px",
-            border: "1px solid #334155",
+            border: isDark ? "1px solid #334155" : "1px solid #334155",
             animation: "slideInUp 0.3s ease-out",
           }}
         >
@@ -216,7 +218,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Header */}
+      {/* Main Header with Eye Theme Toggle */}
       <ShopHeader
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -231,7 +233,9 @@ export default function Home() {
       {/* 1. HERO SECTION WITH PROMO SLIDER & SIDE CARDS */}
       <section
         style={{
-          background: "linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)",
+          background: isDark
+            ? "linear-gradient(135deg, #022c22 0%, #064e3b 50%, #065f46 100%)"
+            : "linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)",
           color: "#ffffff",
           padding: "36px 24px 44px",
           position: "relative",
@@ -480,9 +484,10 @@ export default function Home() {
       {/* 2. FLASH DEALS WITH REAL COUNTDOWN TIMER */}
       <section
         style={{
-          background: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
+          background: isDark ? "#0f172a" : "#ffffff",
+          borderBottom: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
           padding: "24px",
+          transition: "background-color 0.3s ease",
         }}
       >
         <div
@@ -502,11 +507,11 @@ export default function Home() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                background: "#fef2f2",
-                color: "#dc2626",
+                background: isDark ? "rgba(239, 68, 68, 0.2)" : "#fef2f2",
+                color: "#ef4444",
                 padding: "6px 14px",
                 borderRadius: "20px",
-                border: "1px solid #fecaca",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
                 fontWeight: "900",
                 fontSize: "13px",
               }}
@@ -515,38 +520,40 @@ export default function Home() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "#64748b" }}>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: isDark ? "#94a3b8" : "#64748b" }}>
                 បញ្ចប់ក្នុងរយៈពេល:
               </span>
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 <span
                   style={{
-                    background: "#0f172a",
+                    background: isDark ? "#1e293b" : "#0f172a",
                     color: "#ffffff",
                     padding: "4px 8px",
                     borderRadius: "6px",
                     fontWeight: "900",
                     fontSize: "13px",
                     fontFamily: "monospace",
+                    border: isDark ? "1px solid #334155" : "none",
                   }}
                 >
                   {countdown.hours}
                 </span>
-                <span style={{ fontWeight: "900", color: "#0f172a" }}>:</span>
+                <span style={{ fontWeight: "900", color: isDark ? "#94a3b8" : "#0f172a" }}>:</span>
                 <span
                   style={{
-                    background: "#0f172a",
+                    background: isDark ? "#1e293b" : "#0f172a",
                     color: "#ffffff",
                     padding: "4px 8px",
                     borderRadius: "6px",
                     fontWeight: "900",
                     fontSize: "13px",
                     fontFamily: "monospace",
+                    border: isDark ? "1px solid #334155" : "none",
                   }}
                 >
                   {countdown.minutes}
                 </span>
-                <span style={{ fontWeight: "900", color: "#0f172a" }}>:</span>
+                <span style={{ fontWeight: "900", color: isDark ? "#94a3b8" : "#0f172a" }}>:</span>
                 <span
                   style={{
                     background: "#ef4444",
@@ -564,14 +571,20 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ fontSize: "13px", color: "#059669", fontWeight: "700" }}>
+          <div style={{ fontSize: "13px", color: "#10b981", fontWeight: "700" }}>
             🔥 លក់ដាច់បាន 82% • ទំនិញក្នុងស្តុកនៅសល់តិច!
           </div>
         </div>
       </section>
 
       {/* 3. CATEGORIES AISLE BAR */}
-      <section style={{ padding: "36px 24px 20px", background: "#f8fafc" }}>
+      <section
+        style={{
+          padding: "36px 24px 20px",
+          background: isDark ? "#0b1120" : "#f8fafc",
+          transition: "background-color 0.3s ease",
+        }}
+      >
         <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
           <div
             style={{
@@ -593,7 +606,14 @@ export default function Home() {
               >
                 SUPERMARKET AISLES
               </span>
-              <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", margin: "4px 0 0" }}>
+              <h2
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "900",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  margin: "4px 0 0",
+                }}
+              >
                 ជ្រើសរើសតាមផ្នែកក្នុងម៉ាត (Shop by Category)
               </h2>
             </div>
@@ -601,7 +621,7 @@ export default function Home() {
             <Link
               to="/products"
               style={{
-                color: "#059669",
+                color: "#10b981",
                 fontSize: "13px",
                 fontWeight: "700",
                 textDecoration: "none",
@@ -633,9 +653,17 @@ export default function Home() {
                   type="button"
                   onClick={() => handleCategoryClick(cat.id)}
                   style={{
-                    background: isSelected ? "linear-gradient(135deg, #059669, #047857)" : "#ffffff",
-                    color: isSelected ? "#ffffff" : "#1e293b",
-                    border: isSelected ? "none" : "1.5px solid #e2e8f0",
+                    background: isSelected
+                      ? "linear-gradient(135deg, #059669, #047857)"
+                      : isDark
+                      ? "#131d31"
+                      : "#ffffff",
+                    color: isSelected ? "#ffffff" : isDark ? "#f8fafc" : "#1e293b",
+                    border: isSelected
+                      ? "none"
+                      : isDark
+                      ? "1.5px solid #223249"
+                      : "1.5px solid #e2e8f0",
                     borderRadius: "16px",
                     padding: "16px 12px",
                     cursor: "pointer",
@@ -643,6 +671,8 @@ export default function Home() {
                     transition: "all 0.25s ease",
                     boxShadow: isSelected
                       ? "0 8px 20px rgba(5, 150, 105, 0.25)"
+                      : isDark
+                      ? "0 4px 10px rgba(0,0,0,0.3)"
                       : "0 2px 6px rgba(0,0,0,0.03)",
                     display: "flex",
                     flexDirection: "column",
@@ -655,7 +685,7 @@ export default function Home() {
                   <span
                     style={{
                       fontSize: "11px",
-                      color: isSelected ? "#d1fae5" : "#64748b",
+                      color: isSelected ? "#d1fae5" : isDark ? "#94a3b8" : "#64748b",
                       fontWeight: "600",
                     }}
                   >
@@ -671,7 +701,11 @@ export default function Home() {
       {/* 4. PRODUCTS CATALOG SHOWCASE */}
       <section
         id="mart-products-grid"
-        style={{ padding: "30px 24px 70px", background: "#f8fafc" }}
+        style={{
+          padding: "30px 24px 70px",
+          background: isDark ? "#0b1120" : "#f8fafc",
+          transition: "background-color 0.3s ease",
+        }}
       >
         <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
           {/* Header & Filter Controls */}
@@ -684,7 +718,7 @@ export default function Home() {
               gap: "16px",
               marginBottom: "24px",
               paddingBottom: "16px",
-              borderBottom: "1px solid #e2e8f0",
+              borderBottom: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
             }}
           >
             <div>
@@ -699,12 +733,19 @@ export default function Home() {
               >
                 AUTHENTIC GROCERY CATALOG
               </span>
-              <h2 style={{ fontSize: "26px", fontWeight: "900", color: "#0f172a", margin: "4px 0 0" }}>
+              <h2
+                style={{
+                  fontSize: "26px",
+                  fontWeight: "900",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  margin: "4px 0 0",
+                }}
+              >
                 {selectedCategory === "all"
                   ? "មុខទំនិញក្នុងម៉ាតទាំងអស់ (All Products)"
                   : categories.find((c) => c.id === selectedCategory)?.nameKh}
               </h2>
-              <p style={{ color: "#64748b", fontSize: "13px", marginTop: "3px" }}>
+              <p style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "13px", marginTop: "3px" }}>
                 បង្ហាញ <strong>{filteredProducts.length}</strong> ទំនិញក្នុងស្តុក (រូបភាពពិត & គុណភាពខ្ពស់)
                 {searchQuery ? ` • លទ្ធផលស្វែងរក: "${searchQuery}"` : ""}
               </p>
@@ -713,18 +754,20 @@ export default function Home() {
             {/* Sort & Actions */}
             <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "700" }}>តម្រៀប:</span>
+                <span style={{ fontSize: "12px", color: isDark ? "#94a3b8" : "#64748b", fontWeight: "700" }}>
+                  តម្រៀប:
+                </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   style={{
                     padding: "8px 12px",
                     borderRadius: "10px",
-                    border: "1.5px solid #cbd5e1",
-                    background: "#ffffff",
+                    border: isDark ? "1.5px solid #334155" : "1.5px solid #cbd5e1",
+                    background: isDark ? "#1e293b" : "#ffffff",
                     fontSize: "12.5px",
                     fontWeight: "600",
-                    color: "#334155",
+                    color: isDark ? "#f8fafc" : "#334155",
                     outline: "none",
                   }}
                 >
@@ -743,11 +786,11 @@ export default function Home() {
                   style={{
                     padding: "8px 14px",
                     borderRadius: "10px",
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
+                    border: isDark ? "1px solid #334155" : "1px solid #cbd5e1",
+                    background: isDark ? "#1e293b" : "#ffffff",
                     fontSize: "12px",
                     fontWeight: "600",
-                    color: "#475569",
+                    color: isDark ? "#cbd5e1" : "#475569",
                     cursor: "pointer",
                   }}
                 >
@@ -762,9 +805,9 @@ export default function Home() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  background: "#ffffff",
-                  color: "#64748b",
+                  border: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+                  background: isDark ? "#1e293b" : "#ffffff",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontWeight: "600",
                   fontSize: "12px",
                   cursor: "pointer",
@@ -781,18 +824,25 @@ export default function Home() {
               style={{
                 textAlign: "center",
                 padding: "60px 20px",
-                background: "#ffffff",
+                background: isDark ? "#131d31" : "#ffffff",
                 borderRadius: "20px",
-                border: "1.5px dashed #cbd5e1",
+                border: isDark ? "1.5px dashed #334155" : "1.5px dashed #cbd5e1",
                 maxWidth: "480px",
                 margin: "0 auto",
               }}
             >
               <div style={{ fontSize: "52px", marginBottom: "14px" }}>🔍</div>
-              <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#1e293b", marginBottom: "8px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "800",
+                  color: isDark ? "#f8fafc" : "#1e293b",
+                  marginBottom: "8px",
+                }}
+              >
                 រកមិនឃើញទំនិញ "{searchQuery}" ទេ
               </h3>
-              <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
+              <p style={{ fontSize: "13px", color: isDark ? "#94a3b8" : "#64748b", marginBottom: "20px" }}>
                 អ្នកអាចចុចបន្ថែមទំនិញនេះចូលក្នុងម៉ាតបានយ៉ាងងាយស្រួល!
               </p>
               <button
@@ -834,13 +884,20 @@ export default function Home() {
                     : null;
 
                 return (
-                  <div key={product.id} className="mart-product-card">
+                  <div
+                    key={product.id}
+                    className="mart-product-card"
+                    style={{
+                      background: isDark ? "#131d31" : "#ffffff",
+                      borderColor: isDark ? "#223249" : "#e2e8f0",
+                    }}
+                  >
                     {/* Image Area */}
                     <div
                       style={{
                         height: "210px",
                         position: "relative",
-                        background: "#f1f5f9",
+                        background: isDark ? "#0f172a" : "#f1f5f9",
                         overflow: "hidden",
                         cursor: "pointer",
                       }}
@@ -917,15 +974,15 @@ export default function Home() {
                         {product.barcode && (
                           <span
                             style={{
-                              background: "rgba(255, 255, 255, 0.92)",
+                              background: isDark ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.92)",
                               backdropFilter: "blur(4px)",
-                              color: "#475569",
+                              color: isDark ? "#cbd5e1" : "#475569",
                               fontSize: "10px",
                               fontFamily: "monospace",
                               fontWeight: "700",
                               padding: "2px 6px",
                               borderRadius: "6px",
-                              border: "1px solid rgba(0,0,0,0.08)",
+                              border: isDark ? "1px solid #334155" : "1px solid rgba(0,0,0,0.08)",
                             }}
                           >
                             BAR: {product.barcode}
@@ -998,8 +1055,8 @@ export default function Home() {
                             style={{
                               fontSize: "11px",
                               fontWeight: "700",
-                              color: "#059669",
-                              background: "#ecfdf5",
+                              color: "#10b981",
+                              background: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
                               padding: "2px 8px",
                               borderRadius: "6px",
                             }}
@@ -1011,8 +1068,8 @@ export default function Home() {
                             style={{
                               fontSize: "11px",
                               fontWeight: "600",
-                              color: "#64748b",
-                              background: "#f1f5f9",
+                              color: isDark ? "#94a3b8" : "#64748b",
+                              background: isDark ? "#1e293b" : "#f1f5f9",
                               padding: "2px 8px",
                               borderRadius: "6px",
                             }}
@@ -1026,7 +1083,7 @@ export default function Home() {
                           style={{
                             fontSize: "15px",
                             fontWeight: "800",
-                            color: "#0f172a",
+                            color: isDark ? "#f8fafc" : "#0f172a",
                             lineHeight: "1.35",
                             marginBottom: "4px",
                             cursor: "pointer",
@@ -1040,7 +1097,7 @@ export default function Home() {
                           <div
                             style={{
                               fontSize: "12px",
-                              color: "#64748b",
+                              color: isDark ? "#94a3b8" : "#64748b",
                               marginBottom: "10px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -1053,7 +1110,13 @@ export default function Home() {
                       </div>
 
                       {/* Pricing, Stepper & Action Buttons */}
-                      <div style={{ marginTop: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "10px" }}>
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          borderTop: isDark ? "1px solid #1e293b" : "1px solid #f1f5f9",
+                          paddingTop: "10px",
+                        }}
+                      >
                         <div
                           style={{
                             display: "flex",
@@ -1064,7 +1127,13 @@ export default function Home() {
                         >
                           <div>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-                              <span style={{ fontSize: "20px", fontWeight: "900", color: "#0f172a" }}>
+                              <span
+                                style={{
+                                  fontSize: "20px",
+                                  fontWeight: "900",
+                                  color: isDark ? "#f8fafc" : "#0f172a",
+                                }}
+                              >
                                 ${Number(product.price).toFixed(2)}
                               </span>
                               {product.originalPrice &&
@@ -1080,7 +1149,7 @@ export default function Home() {
                                   </span>
                                 )}
                             </div>
-                            <div style={{ fontSize: "11px", color: "#059669", fontWeight: "600" }}>
+                            <div style={{ fontSize: "11px", color: "#10b981", fontWeight: "600" }}>
                               ≈ {approxRiel} ៛
                             </div>
                           </div>
@@ -1105,7 +1174,7 @@ export default function Home() {
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
-                              background: "#f1f5f9",
+                              background: isDark ? "#1e293b" : "#f1f5f9",
                               borderRadius: "8px",
                               padding: "2px",
                             }}
@@ -1118,19 +1187,26 @@ export default function Home() {
                                 height: "26px",
                                 borderRadius: "6px",
                                 border: "none",
-                                background: "#ffffff",
+                                background: isDark ? "#0f172a" : "#ffffff",
+                                color: isDark ? "#f8fafc" : "#0f172a",
                                 fontSize: "14px",
                                 fontWeight: "700",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                justifyItems: "center",
                                 justifyContent: "center",
                               }}
                             >
                               −
                             </button>
-                            <span style={{ padding: "0 10px", fontSize: "13px", fontWeight: "800" }}>
+                            <span
+                              style={{
+                                padding: "0 10px",
+                                fontSize: "13px",
+                                fontWeight: "800",
+                                color: isDark ? "#f8fafc" : "#0f172a",
+                              }}
+                            >
                               {cardQty}
                             </span>
                             <button
@@ -1141,13 +1217,13 @@ export default function Home() {
                                 height: "26px",
                                 borderRadius: "6px",
                                 border: "none",
-                                background: "#ffffff",
+                                background: isDark ? "#0f172a" : "#ffffff",
+                                color: isDark ? "#f8fafc" : "#0f172a",
                                 fontSize: "14px",
                                 fontWeight: "700",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
-                                justifyItems: "center",
                                 justifyContent: "center",
                               }}
                             >
@@ -1160,8 +1236,8 @@ export default function Home() {
                             onClick={() => setQuickViewProduct(product)}
                             style={{
                               background: "none",
-                              border: "1px solid #cbd5e1",
-                              color: "#475569",
+                              border: isDark ? "1px solid #334155" : "1px solid #cbd5e1",
+                              color: isDark ? "#cbd5e1" : "#475569",
                               padding: "5px 10px",
                               borderRadius: "8px",
                               fontSize: "11.5px",
@@ -1180,10 +1256,10 @@ export default function Home() {
                             onClick={(e) => handleBuyNow(e, product)}
                             style={{
                               padding: "9px 8px",
-                              background: "#0f172a",
+                              background: isDark ? "#1e293b" : "#0f172a",
                               color: "#ffffff",
                               borderRadius: "10px",
-                              border: "none",
+                              border: isDark ? "1px solid #334155" : "none",
                               fontWeight: "700",
                               fontSize: "12.5px",
                               cursor: "pointer",
@@ -1232,9 +1308,10 @@ export default function Home() {
       {/* 5. CUSTOMER TESTIMONIALS / SOCIAL PROOF */}
       <section
         style={{
-          background: "#ffffff",
+          background: isDark ? "#0f172a" : "#ffffff",
           padding: "50px 24px",
-          borderTop: "1px solid #e2e8f0",
+          borderTop: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
+          transition: "background-color 0.3s ease",
         }}
       >
         <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
@@ -1250,10 +1327,17 @@ export default function Home() {
             >
               CUSTOMER EXPERIENCES
             </span>
-            <h2 style={{ fontSize: "26px", fontWeight: "900", color: "#0f172a", margin: "4px 0 8px" }}>
+            <h2
+              style={{
+                fontSize: "26px",
+                fontWeight: "900",
+                color: isDark ? "#f8fafc" : "#0f172a",
+                margin: "4px 0 8px",
+              }}
+            >
               អតិថិជនពេញចិត្តការទិញទំនិញក្នុងម៉ាតរបស់យើង
             </h2>
-            <p style={{ color: "#64748b", fontSize: "14px" }}>
+            <p style={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "14px" }}>
               ការវាយតម្លៃពិតពីអតិថិជនជាង 1,400+ នាក់នៅទូទាំងរាជធានីភ្នំពេញ
             </p>
           </div>
@@ -1268,17 +1352,17 @@ export default function Home() {
             {/* Review 1 */}
             <div
               style={{
-                background: "#f8fafc",
+                background: isDark ? "#131d31" : "#f8fafc",
                 borderRadius: "18px",
                 padding: "24px",
-                border: "1px solid #e2e8f0",
+                border: isDark ? "1px solid #223249" : "1px solid #e2e8f0",
               }}
             >
               <div style={{ color: "#f59e0b", fontSize: "16px", marginBottom: "10px" }}>
                 ★★★★★
               </div>
-              <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
-                "សេវាដឹកជញ្ជូនរហ័សខ្លាំងណាស់ កុម្ម៉ង់តែ 20 នាទីប៉ុណ្ណោះ ផ្លែឈើ និងភេសជ្ជៈមកដល់ត្រជាក់ស្រស់ៗតែម្តង! ការទូទាត់ KHQR ស្រួលប្រើមែនទែន។"
+              <p style={{ fontSize: "13.5px", color: isDark ? "#cbd5e1" : "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
+                "សេវាដឹកជញ្ជូនរហ័សខ្លណាស់ កុម្ម៉ង់តែ 20 នាទីប៉ុណ្ណោះ ផ្លែឈើ និងភេសជ្ជៈមកដល់ត្រជាក់ស្រស់ៗតែម្តង! ការទូទាត់ KHQR ស្រួលប្រើមែនទែន។"
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div
@@ -1298,10 +1382,10 @@ export default function Home() {
                   ST
                 </div>
                 <div>
-                  <strong style={{ fontSize: "13px", color: "#0f172a", display: "block" }}>
+                  <strong style={{ fontSize: "13px", color: isDark ? "#f8fafc" : "#0f172a", display: "block" }}>
                     Sokun Theara
                   </strong>
-                  <small style={{ color: "#059669", fontSize: "11px", fontWeight: "700" }}>
+                  <small style={{ color: "#10b981", fontSize: "11px", fontWeight: "700" }}>
                     ✓ អ្នកទិញផ្ទៀងផ្ទាត់ (ទួលគោក)
                   </small>
                 </div>
@@ -1311,16 +1395,16 @@ export default function Home() {
             {/* Review 2 */}
             <div
               style={{
-                background: "#f8fafc",
+                background: isDark ? "#131d31" : "#f8fafc",
                 borderRadius: "18px",
                 padding: "24px",
-                border: "1px solid #e2e8f0",
+                border: isDark ? "1px solid #223249" : "1px solid #e2e8f0",
               }}
             >
               <div style={{ color: "#f59e0b", fontSize: "16px", marginBottom: "10px" }}>
                 ★★★★★
               </div>
-              <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
+              <p style={{ fontSize: "13.5px", color: isDark ? "#cbd5e1" : "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
                 "ទំនិញមានគុណភាពល្អ និងតម្លៃសមរម្យជាងម៉ាតផ្សេងទៀត។ មានជម្រើសច្រើនដូចជាមីម៉ាម៉ា ទឹកដោះគោ Meiji និងសាប៊ូដុសខ្លួន ពេញចិត្ត 100%!"
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1341,10 +1425,10 @@ export default function Home() {
                   KP
                 </div>
                 <div>
-                  <strong style={{ fontSize: "13px", color: "#0f172a", display: "block" }}>
+                  <strong style={{ fontSize: "13px", color: isDark ? "#f8fafc" : "#0f172a", display: "block" }}>
                     Kalyan Pich
                   </strong>
-                  <small style={{ color: "#059669", fontSize: "11px", fontWeight: "700" }}>
+                  <small style={{ color: "#10b981", fontSize: "11px", fontWeight: "700" }}>
                     ✓ អ្នកទិញផ្ទៀងផ្ទាត់ (BKK1)
                   </small>
                 </div>
@@ -1354,16 +1438,16 @@ export default function Home() {
             {/* Review 3 */}
             <div
               style={{
-                background: "#f8fafc",
+                background: isDark ? "#131d31" : "#f8fafc",
                 borderRadius: "18px",
                 padding: "24px",
-                border: "1px solid #e2e8f0",
+                border: isDark ? "1px solid #223249" : "1px solid #e2e8f0",
               }}
             >
               <div style={{ color: "#f59e0b", fontSize: "16px", marginBottom: "10px" }}>
                 ★★★★★
               </div>
-              <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
+              <p style={{ fontSize: "13.5px", color: isDark ? "#cbd5e1" : "#334155", lineHeight: "1.7", marginBottom: "16px" }}>
                 "ការវេចខ្ចប់មានអនាម័យខ្ពស់ បុគ្គលិកអ្នកដឹកសុភាពរាបសារ។ អាចតាមដានការដឹកជញ្ជូនលើ web ផ្ទាល់ដឹងថាអ្នកដឹកដល់ណាហើយ ងាយស្រួលណាស់!"
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1384,10 +1468,10 @@ export default function Home() {
                   VM
                 </div>
                 <div>
-                  <strong style={{ fontSize: "13px", color: "#0f172a", display: "block" }}>
+                  <strong style={{ fontSize: "13px", color: isDark ? "#f8fafc" : "#0f172a", display: "block" }}>
                     Vireak Meng
                   </strong>
-                  <small style={{ color: "#059669", fontSize: "11px", fontWeight: "700" }}>
+                  <small style={{ color: "#10b981", fontSize: "11px", fontWeight: "700" }}>
                     ✓ អ្នកទិញផ្ទៀងផ្ទាត់ (សែនសុខ)
                   </small>
                 </div>

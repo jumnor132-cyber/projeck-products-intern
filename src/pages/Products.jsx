@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { addToCart } from "../utils/cart";
 import { useMartProducts } from "../utils/products";
+import { useTheme } from "../utils/theme";
 import ShopHeader from "../components/ShopHeader";
 import ShopFooter from "../components/ShopFooter";
 import QuickViewModal from "../components/QuickViewModal";
@@ -9,6 +10,7 @@ import QuickViewModal from "../components/QuickViewModal";
 export default function Products() {
   const navigate = useNavigate();
   const { products, deleteProduct, resetProducts, categories } = useMartProducts();
+  const { isDark } = useTheme();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [search, setSearch] = useState("");
@@ -96,7 +98,7 @@ export default function Products() {
   }
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${isDark ? "dark-theme" : ""}`}>
       {/* Toast */}
       {toast && (
         <div
@@ -104,7 +106,7 @@ export default function Products() {
             position: "fixed",
             bottom: "28px",
             right: "28px",
-            background: "#0f172a",
+            background: isDark ? "#1e293b" : "#0f172a",
             color: "#ffffff",
             padding: "14px 22px",
             borderRadius: "14px",
@@ -113,7 +115,7 @@ export default function Products() {
             display: "flex",
             alignItems: "center",
             gap: "14px",
-            border: "1px solid #334155",
+            border: isDark ? "1px solid #334155" : "1px solid #334155",
             animation: "slideInUp 0.3s ease-out",
           }}
         >
@@ -151,7 +153,9 @@ export default function Products() {
       {/* Catalog Banner */}
       <section
         style={{
-          background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
+          background: isDark
+            ? "linear-gradient(135deg, #022c22 0%, #064e3b 100%)"
+            : "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
           color: "#ffffff",
           padding: "40px 24px 36px",
           textAlign: "center",
@@ -196,7 +200,13 @@ export default function Products() {
       </section>
 
       {/* Main Catalog View */}
-      <section style={{ padding: "36px 24px 70px", background: "#f8fafc" }}>
+      <section
+        style={{
+          padding: "36px 24px 70px",
+          background: isDark ? "#0b1120" : "#f8fafc",
+          transition: "background-color 0.3s ease",
+        }}
+      >
         <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
           {/* Category Tabs */}
           <div
@@ -227,9 +237,17 @@ export default function Products() {
                     gap: "8px",
                     padding: "10px 16px",
                     borderRadius: "12px",
-                    border: isSelected ? "none" : "1.5px solid #e2e8f0",
-                    background: isSelected ? "linear-gradient(135deg, #059669, #047857)" : "#ffffff",
-                    color: isSelected ? "#ffffff" : "#334155",
+                    border: isSelected
+                      ? "none"
+                      : isDark
+                      ? "1.5px solid #223249"
+                      : "1.5px solid #e2e8f0",
+                    background: isSelected
+                      ? "linear-gradient(135deg, #059669, #047857)"
+                      : isDark
+                      ? "#131d31"
+                      : "#ffffff",
+                    color: isSelected ? "#ffffff" : isDark ? "#f8fafc" : "#334155",
                     fontWeight: "700",
                     fontSize: "13px",
                     cursor: "pointer",
@@ -245,8 +263,12 @@ export default function Products() {
                       fontSize: "11px",
                       padding: "1px 6px",
                       borderRadius: "10px",
-                      background: isSelected ? "rgba(255,255,255,0.25)" : "#f1f5f9",
-                      color: isSelected ? "#ffffff" : "#64748b",
+                      background: isSelected
+                        ? "rgba(255,255,255,0.25)"
+                        : isDark
+                        ? "#1e293b"
+                        : "#f1f5f9",
+                      color: isSelected ? "#ffffff" : isDark ? "#94a3b8" : "#64748b",
                     }}
                   >
                     {count}
@@ -264,31 +286,33 @@ export default function Products() {
               alignItems: "center",
               flexWrap: "wrap",
               gap: "14px",
-              background: "#ffffff",
+              background: isDark ? "#131d31" : "#ffffff",
               padding: "16px 20px",
               borderRadius: "16px",
-              border: "1px solid #e2e8f0",
+              border: isDark ? "1px solid #223249" : "1px solid #e2e8f0",
               marginBottom: "28px",
             }}
           >
-            <div style={{ fontSize: "14px", color: "#64748b" }}>
-              បង្ហាញ <strong style={{ color: "#0f172a" }}>{filteredProducts.length}</strong> ទំនិញក្នុងស្តុក
+            <div style={{ fontSize: "14px", color: isDark ? "#94a3b8" : "#64748b" }}>
+              បង្ហាញ <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>{filteredProducts.length}</strong> ទំនិញក្នុងស្តុក
               {search && <span> សម្រាប់ពាក្យ: "{search}"</span>}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "12.5px", fontWeight: "700", color: "#64748b" }}>តម្រៀប:</span>
+              <span style={{ fontSize: "12.5px", fontWeight: "700", color: isDark ? "#94a3b8" : "#64748b" }}>
+                តម្រៀប:
+              </span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
                 style={{
                   padding: "8px 12px",
                   borderRadius: "10px",
-                  border: "1.5px solid #cbd5e1",
-                  background: "#f8fafc",
+                  border: isDark ? "1.5px solid #334155" : "1.5px solid #cbd5e1",
+                  background: isDark ? "#1e293b" : "#f8fafc",
                   fontSize: "12.5px",
                   fontWeight: "600",
-                  color: "#334155",
+                  color: isDark ? "#f8fafc" : "#334155",
                   outline: "none",
                 }}
               >
@@ -305,9 +329,9 @@ export default function Products() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  background: "#ffffff",
-                  color: "#64748b",
+                  border: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+                  background: isDark ? "#1e293b" : "#ffffff",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontWeight: "600",
                   fontSize: "12px",
                   cursor: "pointer",
@@ -324,18 +348,18 @@ export default function Products() {
               style={{
                 textAlign: "center",
                 padding: "60px 20px",
-                background: "#ffffff",
+                background: isDark ? "#131d31" : "#ffffff",
                 borderRadius: "20px",
-                border: "1.5px dashed #cbd5e1",
+                border: isDark ? "1.5px dashed #334155" : "1.5px dashed #cbd5e1",
                 maxWidth: "480px",
                 margin: "0 auto",
               }}
             >
               <div style={{ fontSize: "52px", marginBottom: "14px" }}>🔍</div>
-              <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#1e293b", marginBottom: "8px" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "800", color: isDark ? "#f8fafc" : "#1e293b", marginBottom: "8px" }}>
                 រកមិនឃើញទំនិញក្នុងផ្នែកនេះទេ
               </h3>
-              <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
+              <p style={{ fontSize: "13px", color: isDark ? "#94a3b8" : "#64748b", marginBottom: "20px" }}>
                 សូមសាកល្បងជ្រើសរើសប្រភេទផ្សេង ឬសម្អាតការស្វែងរក
               </p>
               <button
@@ -379,13 +403,20 @@ export default function Products() {
                     : null;
 
                 return (
-                  <div key={product.id} className="mart-product-card">
+                  <div
+                    key={product.id}
+                    className="mart-product-card"
+                    style={{
+                      background: isDark ? "#131d31" : "#ffffff",
+                      borderColor: isDark ? "#223249" : "#e2e8f0",
+                    }}
+                  >
                     {/* Image Area */}
                     <div
                       style={{
                         height: "210px",
                         position: "relative",
-                        background: "#f1f5f9",
+                        background: isDark ? "#0f172a" : "#f1f5f9",
                         overflow: "hidden",
                         cursor: "pointer",
                       }}
@@ -460,14 +491,15 @@ export default function Products() {
                         {product.barcode && (
                           <span
                             style={{
-                              background: "rgba(255, 255, 255, 0.92)",
+                              background: isDark ? "rgba(15, 23, 42, 0.9)" : "rgba(255, 255, 255, 0.92)",
                               backdropFilter: "blur(4px)",
-                              color: "#475569",
+                              color: isDark ? "#cbd5e1" : "#475569",
                               fontSize: "10px",
                               fontFamily: "monospace",
                               fontWeight: "700",
                               padding: "2px 6px",
                               borderRadius: "6px",
+                              border: isDark ? "1px solid #334155" : "1px solid rgba(0,0,0,0.08)",
                             }}
                           >
                             BAR: {product.barcode}
@@ -538,8 +570,8 @@ export default function Products() {
                             style={{
                               fontSize: "11px",
                               fontWeight: "700",
-                              color: "#059669",
-                              background: "#ecfdf5",
+                              color: "#10b981",
+                              background: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
                               padding: "2px 8px",
                               borderRadius: "6px",
                             }}
@@ -551,8 +583,8 @@ export default function Products() {
                             style={{
                               fontSize: "11px",
                               fontWeight: "600",
-                              color: "#64748b",
-                              background: "#f1f5f9",
+                              color: isDark ? "#94a3b8" : "#64748b",
+                              background: isDark ? "#1e293b" : "#f1f5f9",
                               padding: "2px 8px",
                               borderRadius: "6px",
                             }}
@@ -565,7 +597,7 @@ export default function Products() {
                           style={{
                             fontSize: "15px",
                             fontWeight: "800",
-                            color: "#0f172a",
+                            color: isDark ? "#f8fafc" : "#0f172a",
                             lineHeight: "1.35",
                             marginBottom: "4px",
                             cursor: "pointer",
@@ -579,7 +611,7 @@ export default function Products() {
                           <div
                             style={{
                               fontSize: "12px",
-                              color: "#64748b",
+                              color: isDark ? "#94a3b8" : "#64748b",
                               marginBottom: "10px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -592,7 +624,13 @@ export default function Products() {
                       </div>
 
                       {/* Pricing, Stepper & Action Buttons */}
-                      <div style={{ marginTop: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "10px" }}>
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          borderTop: isDark ? "1px solid #1e293b" : "1px solid #f1f5f9",
+                          paddingTop: "10px",
+                        }}
+                      >
                         <div
                           style={{
                             display: "flex",
@@ -603,7 +641,13 @@ export default function Products() {
                         >
                           <div>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-                              <span style={{ fontSize: "20px", fontWeight: "900", color: "#0f172a" }}>
+                              <span
+                                style={{
+                                  fontSize: "20px",
+                                  fontWeight: "900",
+                                  color: isDark ? "#f8fafc" : "#0f172a",
+                                }}
+                              >
                                 ${Number(product.price).toFixed(2)}
                               </span>
                               {product.originalPrice &&
@@ -619,7 +663,7 @@ export default function Products() {
                                   </span>
                                 )}
                             </div>
-                            <div style={{ fontSize: "11px", color: "#059669", fontWeight: "600" }}>
+                            <div style={{ fontSize: "11px", color: "#10b981", fontWeight: "600" }}>
                               ≈ {approxRiel} ៛
                             </div>
                           </div>
@@ -643,7 +687,7 @@ export default function Products() {
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
-                              background: "#f1f5f9",
+                              background: isDark ? "#1e293b" : "#f1f5f9",
                               borderRadius: "8px",
                               padding: "2px",
                             }}
@@ -656,7 +700,8 @@ export default function Products() {
                                 height: "26px",
                                 borderRadius: "6px",
                                 border: "none",
-                                background: "#ffffff",
+                                background: isDark ? "#0f172a" : "#ffffff",
+                                color: isDark ? "#f8fafc" : "#0f172a",
                                 fontSize: "14px",
                                 fontWeight: "700",
                                 cursor: "pointer",
@@ -667,7 +712,14 @@ export default function Products() {
                             >
                               −
                             </button>
-                            <span style={{ padding: "0 10px", fontSize: "13px", fontWeight: "800" }}>
+                            <span
+                              style={{
+                                padding: "0 10px",
+                                fontSize: "13px",
+                                fontWeight: "800",
+                                color: isDark ? "#f8fafc" : "#0f172a",
+                              }}
+                            >
                               {cardQty}
                             </span>
                             <button
@@ -678,7 +730,8 @@ export default function Products() {
                                 height: "26px",
                                 borderRadius: "6px",
                                 border: "none",
-                                background: "#ffffff",
+                                background: isDark ? "#0f172a" : "#ffffff",
+                                color: isDark ? "#f8fafc" : "#0f172a",
                                 fontSize: "14px",
                                 fontWeight: "700",
                                 cursor: "pointer",
@@ -696,8 +749,8 @@ export default function Products() {
                             onClick={() => setQuickViewProduct(product)}
                             style={{
                               background: "none",
-                              border: "1px solid #cbd5e1",
-                              color: "#475569",
+                              border: isDark ? "1px solid #334155" : "1px solid #cbd5e1",
+                              color: isDark ? "#cbd5e1" : "#475569",
                               padding: "5px 10px",
                               borderRadius: "8px",
                               fontSize: "11.5px",
@@ -716,10 +769,10 @@ export default function Products() {
                             onClick={(e) => handleBuyNow(e, product)}
                             style={{
                               padding: "9px 8px",
-                              background: "#0f172a",
+                              background: isDark ? "#1e293b" : "#0f172a",
                               color: "#ffffff",
                               borderRadius: "10px",
-                              border: "none",
+                              border: isDark ? "1px solid #334155" : "none",
                               fontWeight: "700",
                               fontSize: "12.5px",
                               cursor: "pointer",

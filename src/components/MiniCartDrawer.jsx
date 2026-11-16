@@ -1,9 +1,12 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../utils/cart";
+import { useTheme } from "../utils/theme";
 
 export default function MiniCartDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { cart, totalQuantity, subtotal, updateCartQuantity, removeFromCart } = useCart();
 
   if (!isOpen) return null;
@@ -25,10 +28,10 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "24px" }}>🛒</span>
             <div>
-              <h3 style={{ fontSize: "17px", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+              <h3 style={{ fontSize: "17px", fontWeight: "800", color: isDark ? "#f8fafc" : "#0f172a", margin: 0 }}>
                 កន្ត្រកទំនិញរបស់អ្នក
               </h3>
-              <span style={{ fontSize: "12px", color: "#64748b" }}>
+              <span style={{ fontSize: "12px", color: isDark ? "#94a3b8" : "#64748b" }}>
                 សរុប {totalQuantity} ឯកតា ({cart.length} មុខ)
               </span>
             </div>
@@ -42,8 +45,10 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
         <div
           style={{
             padding: "12px 20px",
-            background: remainingForFree === 0 ? "#ecfdf5" : "#f8fafc",
-            borderBottom: "1px solid #e2e8f0",
+            background: remainingForFree === 0
+              ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5")
+              : (isDark ? "#131d31" : "#f8fafc"),
+            borderBottom: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
           }}
         >
           <div
@@ -52,7 +57,9 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
               justifyContent: "space-between",
               fontSize: "12px",
               fontWeight: "700",
-              color: remainingForFree === 0 ? "#059669" : "#334155",
+              color: remainingForFree === 0
+                ? (isDark ? "#34d399" : "#059669")
+                : (isDark ? "#cbd5e1" : "#334155"),
               marginBottom: "6px",
             }}
           >
@@ -60,7 +67,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
               <span>🎉 អបអរសាទរ! អ្នកទទួលបានការដឹកជញ្ជូនឥតគិតថ្លៃ!</span>
             ) : (
               <span>
-                ទិញថែម <strong>${remainingForFree.toFixed(2)}</strong> ទៀតដើម្បីដឹកជញ្ជូនឥតគិតថ្លៃ!
+                ទិញថែម <strong style={{ color: "#059669" }}>${remainingForFree.toFixed(2)}</strong> ទៀតដើម្បីដឹកជញ្ជូនឥតគិតថ្លៃ!
               </span>
             )}
             <span>{freePercent}%</span>
@@ -70,7 +77,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
             style={{
               height: "7px",
               width: "100%",
-              background: "#e2e8f0",
+              background: isDark ? "#1e293b" : "#e2e8f0",
               borderRadius: "10px",
               overflow: "hidden",
             }}
@@ -92,10 +99,10 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
           {cart.length === 0 ? (
             <div style={{ textAlign: "center", padding: "50px 10px" }}>
               <div style={{ fontSize: "52px", marginBottom: "14px" }}>🧺</div>
-              <h4 style={{ fontSize: "16px", fontWeight: "800", color: "#1e293b", marginBottom: "6px" }}>
+              <h4 style={{ fontSize: "16px", fontWeight: "800", color: isDark ? "#f8fafc" : "#1e293b", marginBottom: "6px" }}>
                 កន្ត្រកទំនិញរបស់អ្នកទទេ
               </h4>
-              <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
+              <p style={{ fontSize: "13px", color: isDark ? "#94a3b8" : "#64748b", marginBottom: "20px" }}>
                 សូមជ្រើសរើសទំនិញក្នុងម៉ាតស្រស់ៗដែលអ្នកពេញចិត្ត!
               </p>
               <button
@@ -128,8 +135,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                     gap: "12px",
                     padding: "12px",
                     borderRadius: "14px",
-                    background: "#ffffff",
-                    border: "1px solid #e2e8f0",
+                    background: isDark ? "#131d31" : "#ffffff",
+                    border: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
                     position: "relative",
                   }}
                 >
@@ -141,8 +148,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                       height: "68px",
                       borderRadius: "10px",
                       objectFit: "cover",
-                      background: "#f1f5f9",
-                      border: "1px solid #e2e8f0",
+                      background: isDark ? "#1e293b" : "#f1f5f9",
+                      border: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
                       flexShrink: 0,
                     }}
                     onError={(e) => {
@@ -157,7 +164,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                         style={{
                           fontSize: "13px",
                           fontWeight: "800",
-                          color: "#0f172a",
+                          color: isDark ? "#f8fafc" : "#0f172a",
                           margin: 0,
                           lineHeight: "1.3",
                           overflow: "hidden",
@@ -184,7 +191,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                       </button>
                     </div>
 
-                    <div style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 6px" }}>
+                    <div style={{ fontSize: "11px", color: isDark ? "#94a3b8" : "#64748b", margin: "2px 0 6px" }}>
                       {item.unit ? `${item.unit} • ` : ""}${Number(item.price).toFixed(2)} / ឯកតា
                     </div>
 
@@ -194,7 +201,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          background: "#f1f5f9",
+                          background: isDark ? "#0b1120" : "#f1f5f9",
+                          border: isDark ? "1px solid #1e293b" : "none",
                           borderRadius: "8px",
                           padding: "2px",
                         }}
@@ -207,7 +215,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                             height: "24px",
                             borderRadius: "6px",
                             border: "none",
-                            background: "#ffffff",
+                            background: isDark ? "#1e293b" : "#ffffff",
+                            color: isDark ? "#f8fafc" : "#0f172a",
                             fontSize: "14px",
                             fontWeight: "700",
                             cursor: "pointer",
@@ -218,7 +227,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                         >
                           −
                         </button>
-                        <span style={{ padding: "0 10px", fontSize: "13px", fontWeight: "800" }}>
+                        <span style={{ padding: "0 10px", fontSize: "13px", fontWeight: "800", color: isDark ? "#f8fafc" : "#0f172a" }}>
                           {item.quantity || 1}
                         </span>
                         <button
@@ -229,7 +238,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                             height: "24px",
                             borderRadius: "6px",
                             border: "none",
-                            background: "#ffffff",
+                            background: isDark ? "#1e293b" : "#ffffff",
+                            color: isDark ? "#f8fafc" : "#0f172a",
                             fontSize: "14px",
                             fontWeight: "700",
                             cursor: "pointer",
@@ -242,7 +252,7 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                         </button>
                       </div>
 
-                      <strong style={{ fontSize: "14px", fontWeight: "900", color: "#0f172a" }}>
+                      <strong style={{ fontSize: "14px", fontWeight: "900", color: "#059669" }}>
                         ${(Number(item.price) * Number(item.quantity || 1)).toFixed(2)}
                       </strong>
                     </div>
@@ -258,9 +268,9 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
           <div
             style={{
               padding: "18px 20px",
-              background: "#ffffff",
-              borderTop: "1px solid #e2e8f0",
-              boxShadow: "0 -4px 16px rgba(0,0,0,0.04)",
+              background: isDark ? "#131d31" : "#ffffff",
+              borderTop: isDark ? "1px solid #1e293b" : "1px solid #e2e8f0",
+              boxShadow: "0 -4px 16px rgba(0,0,0,0.2)",
             }}
           >
             <div
@@ -272,12 +282,12 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
               }}
             >
               <div>
-                <span style={{ fontSize: "13px", color: "#64748b" }}>សរុបរួម (Subtotal):</span>
+                <span style={{ fontSize: "13px", color: isDark ? "#94a3b8" : "#64748b" }}>សរុបរួម (Subtotal):</span>
                 <div style={{ fontSize: "11px", color: "#059669", fontWeight: "700" }}>
                   ≈ {approxRiel} ៛
                 </div>
               </div>
-              <span style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a" }}>
+              <span style={{ fontSize: "24px", fontWeight: "900", color: isDark ? "#f8fafc" : "#0f172a" }}>
                 ${subtotal.toFixed(2)}
               </span>
             </div>
@@ -316,8 +326,8 @@ export default function MiniCartDrawer({ isOpen, onClose }) {
                 style={{
                   width: "100%",
                   padding: "10px",
-                  background: "#f1f5f9",
-                  color: "#334155",
+                  background: isDark ? "#1e293b" : "#f1f5f9",
+                  color: isDark ? "#f8fafc" : "#334155",
                   borderRadius: "10px",
                   fontWeight: "700",
                   fontSize: "13px",

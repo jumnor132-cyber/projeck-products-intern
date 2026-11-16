@@ -1079,3 +1079,103 @@ select.ck-input {
   padding-top: 16px;
   border-top: 1px solid var(--ck-slate-200);
 }
+
+/* ==========================================================================
+   DARK MODE OVERRIDES FOR CHECKOUT
+   ========================================================================== */
+[data-theme="dark"] {
+  --ck-slate-900: #f8fafc;
+  --ck-slate-800: #e2e8f0;
+  --ck-slate-700: #cbd5e1;
+  --ck-slate-600: #94a3b8;
+  --ck-slate-500: #64748b;
+  --ck-slate-400: #475569;
+  --ck-slate-300: #334155;
+  --ck-slate-200: #1e293b;
+  --ck-slate-100: #131d31;
+  --ck-slate-50: #0b1120;
+  --ck-white: #131d31;
+  --ck-primary-light: rgba(16, 185, 129, 0.15);
+  --ck-primary-border: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .ck-page {
+  background-color: #0b1120;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .ck-navbar {
+  background: #131d31;
+  border-bottom: 1px solid #1e293b;
+}
+
+[data-theme="dark"] .ck-card,
+[data-theme="dark"] .ck-summary-card,
+[data-theme="dark"] .ck-invoice-card,
+[data-theme="dark"] .ck-panel {
+  background: #131d31;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .ck-input,
+[data-theme="dark"] .ck-select,
+[data-theme="dark"] .ck-textarea {
+  background: #0b1120;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ck-input:focus,
+[data-theme="dark"] .ck-select:focus,
+[data-theme="dark"] .ck-textarea:focus {
+  border-color: var(--ck-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="dark"] .ck-payment-opt {
+  background: #0b1120;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .ck-payment-opt.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: #059669;
+}
+
+[data-theme="dark"] .ck-nav-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .ck-nav-btn:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .ck-modal-box {
+  background: #131d31;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .ck-summary-item {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .ck-summary-coupon {
+  background: #0b1120;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .ck-brand-tag {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ck-step-num {
+  background: #1e293b;
+  color: #94a3b8;
+}
+

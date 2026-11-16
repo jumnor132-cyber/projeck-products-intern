@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../utils/cart";
+import { useTheme } from "../utils/theme";
 import MiniCartDrawer from "./MiniCartDrawer";
 import LocationModal from "./LocationModal";
 import TrackOrderModal from "./TrackOrderModal";
@@ -13,11 +14,13 @@ export default function ShopHeader({
 }) {
   const location = useLocation();
   const { totalQuantity, subtotal } = useCart();
+  const { isDark, toggleTheme } = useTheme();
 
   const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isTrackOpen, setIsTrackOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [themeToast, setThemeToast] = useState(null);
 
   // Selected delivery location
   const [selectedDistrict, setSelectedDistrict] = useState(() => {
@@ -29,10 +32,49 @@ export default function ShopHeader({
     localStorage.setItem("fm_delivery_district", name);
   };
 
+  const handleToggleTheme = () => {
+    const next = toggleTheme();
+    setThemeToast(
+      next === "dark"
+        ? "👁️ បានប្តូរទៅ [មើលងងឹត 🌙] (Dark Mode)"
+        : "👁️ បានប្តូរទៅ [មើលភ្លឺ ☀️] (Light Mode)"
+    );
+    setTimeout(() => {
+      setThemeToast(null);
+    }, 2500);
+  };
+
   const POPULAR_SEARCHES = ["កូកាកូឡា", "ផ្លែប៉ោម", "មីម៉ាម៉ា", "ទឹកដោះគោ Meiji", "Croissant"];
 
   return (
     <>
+      {/* Theme Switch Toast */}
+      {themeToast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: isDark ? "#1e293b" : "#0f172a",
+            color: "#ffffff",
+            padding: "10px 22px",
+            borderRadius: "30px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+            zIndex: 999999,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "13px",
+            fontWeight: "700",
+            border: "1px solid rgba(255,255,255,0.2)",
+            animation: "slideInUp 0.25s ease-out",
+          }}
+        >
+          {themeToast}
+        </div>
+      )}
+
       {/* 1. TOP NOTICE & SERVICE BAR */}
       <div className="fm-top-bar">
         <div className="fm-top-bar-inner">
@@ -45,6 +87,21 @@ export default function ShopHeader({
           </div>
 
           <div className="fm-top-right">
+            {/* Eye Theme Switch Button (Top Bar) */}
+            <button
+              type="button"
+              className="fm-top-link-btn fm-top-eye-btn"
+              onClick={handleToggleTheme}
+              title={isDark ? "ចុចដើម្បីប្តូរមកមើលភ្លឺ (Light Mode)" : "ចុចដើម្បីប្តូរទៅមើលងងឹត (Dark Mode)"}
+            >
+              <span style={{ fontSize: "14px" }}>👁️</span>
+              <strong style={{ color: isDark ? "#38bdf8" : "#a7f3d0" }}>
+                {isDark ? "មើលភ្លឺ ☀️" : "មើលងងឹត 🌙"}
+              </strong>
+            </button>
+
+            <span className="fm-top-sep">•</span>
+
             {/* Delivery Location Selector */}
             <button
               type="button"
@@ -185,6 +242,23 @@ export default function ShopHeader({
               </Link>
             </nav>
 
+            {/* Eye Theme Toggle Button ("រូបភ្នែកសម្រាប់ចុច") in Navbar */}
+            <button
+              type="button"
+              className={`fm-eye-theme-btn ${isDark ? "dark" : ""}`}
+              onClick={handleToggleTheme}
+              title={
+                isDark
+                  ? "ចុចរូបភ្នែកដើម្បីប្តូរមកមើលភ្លឺ (Light Mode) ☀️"
+                  : "ចុចរូបភ្នែកដើម្បីប្តូរទៅមើលងងឹត (Dark Mode) 🌙"
+              }
+            >
+              <span className="fm-eye-icon">👁️</span>
+              <span className="fm-eye-label">
+                {isDark ? "មើលភ្លឺ" : "មើលងងឹត"}
+              </span>
+            </button>
+
             {/* Cart Button (Opens Mini Cart Drawer) */}
             <button
               type="button"
@@ -217,6 +291,23 @@ export default function ShopHeader({
           </div>
         </div>
       </header>
+
+      {/* Floating Quick Eye Button on Bottom Left ("រូបភ្នែកសម្រាប់ចុច គ្រប់ទំព័រ") */}
+      <button
+        type="button"
+        className={`fm-floating-eye-btn ${isDark ? "dark" : ""}`}
+        onClick={handleToggleTheme}
+        title={
+          isDark
+            ? "ចុចរូបភ្នែកដើម្បីប្តូរមកមើលភ្លឺ (Light Mode) ☀️"
+            : "ចុចរូបភ្នែកដើម្បីប្តូរទៅមើលងងឹត (Dark Mode) 🌙"
+        }
+      >
+        <span className="fm-floating-eye-icon">👁️</span>
+        <span className="fm-floating-eye-text">
+          {isDark ? "មើលភ្លឺ ☀️" : "មើលងងឹត 🌙"}
+        </span>
+      </button>
 
       {/* Mini Cart Drawer */}
       <MiniCartDrawer

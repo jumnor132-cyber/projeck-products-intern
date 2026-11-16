@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { clearCart } from "../utils/cart";
+import { useTheme } from "../utils/theme";
 import "./CheckoutClean.css";
 import "../index.css";
 
@@ -9,6 +10,9 @@ const TELEGRAM_PHONE = "0979937524";
 const TELEGRAM_CHAT_URL = "https://t.me/+855979937524";
 
 function Checkout() {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+
   const [form, setForm] = useState({
     fullName: "",
     id: "",
@@ -412,6 +416,18 @@ function Checkout() {
 
         {/* Navigation Action Buttons */}
         <div className="ck-nav-actions">
+          {/* Eye Theme Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="fm-eye-theme-btn"
+            title="ចុចដើម្បីប្តូរ មើលងងឹត / មើលភ្លឺ"
+            style={{ padding: "6px 12px", fontSize: "12.5px" }}
+          >
+            <span className="fm-eye-icon">👁️</span>
+            <span>{isDark ? "មើលភ្លឺ ☀️" : "មើលងងឹត 🌙"}</span>
+          </button>
+
           <Link to="/products" className="ck-nav-btn">
             <span>← ទំនិញក្នុងម៉ាត</span>
           </Link>
@@ -1035,6 +1051,19 @@ function Checkout() {
           </div>
         </div>
       )}
+      {/* Floating Eye Mode Switcher */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="fm-floating-eye-btn"
+        title="ចុចរូបភ្នែកដើម្បីប្តូរ មើលងងឹត / មើលភ្លឺ"
+        aria-label="Toggle Dark or Light Mode"
+      >
+        <span className="fm-eye-icon">👁️</span>
+        <span className="fm-floating-label">
+          {isDark ? "មើលភ្លឺ ☀️" : "មើលងងឹត 🌙"}
+        </span>
+      </button>
     </div>
   );
 }
