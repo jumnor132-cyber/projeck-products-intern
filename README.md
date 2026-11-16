@@ -1,9 +1,8 @@
-
-# 🛍️ Projeck Products Intern
+# 🛍️ FreshMart Supermarket & POS System (Projeck Products Intern)
 
 ### Full Stack Web Development Project
 
-A modern full-stack web application built with React.js, PHP, and MySQL.
+A modern full-stack web application built with React.js, PHP, and MySQL. Features a modern online supermarket storefront and an enterprise-grade Point-of-Sale (POS) & Admin Dashboard.
 
 ---
 
@@ -11,66 +10,94 @@ A modern full-stack web application built with React.js, PHP, and MySQL.
 
 | Frontend | Backend | Database |
 |---|---|---|
-| React.js | PHP | MySQL |
-| JavaScript | REST API | MySQL Database |
-| HTML5 | | |
-| CSS3 | | |
+| React.js (v19) | PHP REST API | MySQL Database |
+| JavaScript / JSX | Apache / XAMPP | Local & Cloud Storage Sync |
+| Modern CSS / Responsive | Telegram Bot / Chat Integration | |
+
+---
 
 ## ✨ Features
 
-- 🏠 Home Page
-- 🛒 Product Listing
-- 🔍 Product Details
-- 🛍️ Shopping Cart
-- 💳 Checkout System
-- 👤 Customer Information
-- 🔗 React & PHP API Integration
-- 🗄️ MySQL Database
+- 🏠 **Home Page**: Featured fresh products, hero banners, category filters, and quick product modals.
+- 🛍️ **Products Catalog**: Complete grocery product listings with live search and price formatting.
+- 🛒 **Shopping Cart**: Real-time quantity adjustments, cart totals, and item removals.
+- 💳 **Cashier & POS Checkout (`/checkout`)**: Multi-step checkout with KHQR Bakong, ABA Bank Transfer, and Cash on Delivery. Automatic tax invoice generation and instant Telegram order notifications.
+- 📊 **Enterprise Admin Dashboard (`/admin`)**:
+  - Protected with PIN security (**Default PIN: `1234`** or `admin`).
+  - Real-time revenue KPI metrics, order volume tracking, and average order value.
+  - Multi-tab navigation: Orders Management, Sales Analytics, and Top Selling Products ranking.
+  - Search & filter orders by customer name, phone number, order number, payment type, and status.
+  - Official Tax Invoice view with print support (`window.print()`) and direct Telegram notification link.
+  - Export all orders directly to Excel / CSV file.
+  - Cloud Live Demo Mode for hosting demonstrations + MySQL local sync when running with Apache/PHP.
 
-## 📸 Project Preview
+---
 
-<!-- Add your project screenshots here -->
+## 🔑 Admin Credentials
+
+- **URL**: `/admin`
+- **Default PIN Code**: `1234` (or `admin`)
+
+---
 
 ## 📁 Project Structure
 
 ```text
 projeck-products-intern/
 │
-├── frontend/
-│   ├── public/
-│   └── src/
+├── public/
+│   ├── _redirects         # SPA routing redirects for Netlify/Cloudflare
+│   ├── favicon.ico
+│   └── index.html         # Google Fonts & metadata
 │
-├── backend/
-│   ├── db.php
-│   └── API files
+├── src/
+│   ├── components/        # Modals and shared UI components
+│   ├── pages/
+│   │   ├── AdminDashboard.jsx
+│   │   ├── AdminDashboard.css
+│   │   ├── Cart.jsx
+│   │   ├── Checkout.jsx
+│   │   ├── Home.jsx
+│   │   └── Products.jsx
+│   ├── utils/
+│   ├── App.js
+│   └── index.js
 │
+├── vercel.json            # SPA routing rewrite for Vercel
 └── README.md
 ```
+
+---
 
 ## ⚙️ How to Run
 
 ### 1. Clone Repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+git clone https://github.com/jumnor132-cyber/projeck-products-intern.git
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-cd frontend
 npm install
 ```
 
-### 3. Start React
+### 3. Start React Development Server
 
 ```bash
 npm start
 ```
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-### 4. Run PHP Backend
+### 4. Build for Production / Hosting
 
-Start your PHP server and configure your MySQL database.
+```bash
+npm run build
+```
+The optimized build folder is ready to deploy directly to Vercel, Netlify, Render, or GitHub Pages.
+
+---
 
 ## 🛠️ Technologies
 

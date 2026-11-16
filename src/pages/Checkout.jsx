@@ -189,122 +189,129 @@ function Checkout() {
       return data;
     };
 
-    try {
-      // PHP API strictly accepts 'Cash on Delivery' or 'Bank Transfer'.
-      // When user selects 'KHQR', we send 'Bank Transfer' so PHP validation succeeds smoothly!
-      const apiPayment =
-        form.payment === "KHQR" ? "Bank Transfer" : (form.payment || "Bank Transfer");
+    let savedToMySQL = false;
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+       window.location.hostname === "127.0.0.1");
 
-      // 1. Save customer in the customers table.
-      const customerResponse = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "customer",
-          customer_id: form.id.trim(),
-          fullName: form.fullName.trim(),
-          age: Number(form.age) || 20,
-          gender: form.gender || "Other",
-          phone: form.phone.trim(),
-          email: form.email.trim(),
-          address: form.address.trim(),
-          payment: apiPayment,
-        }),
-      });
-
-      await readResponse(customerResponse, "Save customer failed");
-
-      // 2. Save order in shop_orders and its items in shop_order_items.
-      // Note: total strictly equals subtotal + shipping to satisfy PHP validation
-      const orderResponse = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action: "order",
-          order_number: orderNumber,
-          customer_id: form.id.trim(),
-          fullName: form.fullName.trim(),
-          phone: form.phone.trim(),
-          email: form.email.trim(),
-          address: form.address.trim(),
-          payment: apiPayment,
-          subtotal: subtotal,
-          shipping: shipping,
-          total: Number((subtotal + shipping).toFixed(2)),
-          items: products.map((product) => ({
-            product_id: String(product.id),
-            product_name: product.name,
-            image: product.image,
-            price: Number(product.price),
-            quantity: Number(product.quantity),
-          })),
-        }),
-      });
-
-      await readResponse(orderResponse, "Save order failed");
-
-      // 3. Confirm the order can be read back from MySQL through PHP.
-      const verifyResponse = await fetch(`${API_URL}?action=orders`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      const verifyData = await readResponse(verifyResponse, "Verify order failed");
-
-      if (!Array.isArray(verifyData.orders)) {
-        throw new Error("PHP response does not contain an orders array.");
-      }
-
-      // Generate Telegram Link
-      const itemsSummary = products.map((p) => `${p.name} x${p.quantity}`).join(", ");
-      const telegramMessage = encodeURIComponent(
-        `🛍️ ការកុម្ម៉ង់ថ្មី (#${orderNumber}) ពី FreshMart!\n` +
-        `👤 អតិថិជន: ${form.fullName}\n` +
-        `📞 ទូរស័ព្ទ: ${form.phone}\n` +
-        `📍 ទីតាំង: ${form.address}\n` +
-        `💳 ការទូទាត់: ${form.payment}\n` +
-        `📦 ទំនិញ: ${itemsSummary}\n` +
-        `💵 សរុប: $${total.toFixed(2)} USD (≈ ${approxTotalRiel} ៛)`
-      );
-      const telegramUrl = `https://t.me/+855979937524?text=${telegramMessage}`;
-
-      const finalSavedOrder = {
-        ...savedOrder,
-        telegramUrl,
-      };
-
-      // 4. Save to localStorage
-      let existingOrders = [];
+    if (isLocalhost) {
       try {
-        existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      } catch {
-        existingOrders = [];
+        // PHP API strictly accepts 'Cash on Delivery' or 'Bank Transfer'.
+        // When user selects 'KHQR', we send 'Bank Transfer' so PHP validation succeeds smoothly!
+        const apiPayment =
+          form.payment === "KHQR" ? "Bank Transfer" : (form.payment || "Bank Transfer");
+
+        // 1. Save customer in the customers table.
+        const customerResponse = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "customer",
+            customer_id: form.id.trim(),
+            fullName: form.fullName.trim(),
+            age: Number(form.age) || 20,
+            gender: form.gender || "Other",
+            phone: form.phone.trim(),
+            email: form.email.trim(),
+            address: form.address.trim(),
+            payment: apiPayment,
+          }),
+        });
+
+        await readResponse(customerResponse, "Save customer failed");
+
+        // 2. Save order in shop_orders and its items in shop_order_items.
+        const orderResponse = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "order",
+            order_number: orderNumber,
+            customer_id: form.id.trim(),
+            fullName: form.fullName.trim(),
+            phone: form.phone.trim(),
+            email: form.email.trim(),
+            address: form.address.trim(),
+            payment: apiPayment,
+            subtotal: subtotal,
+            shipping: shipping,
+            total: Number((subtotal + shipping).toFixed(2)),
+            items: products.map((product) => ({
+              product_id: String(product.id),
+              product_name: product.name,
+              image: product.image,
+              price: Number(product.price),
+              quantity: Number(product.quantity),
+            })),
+          }),
+        });
+
+        await readResponse(orderResponse, "Save order failed");
+
+        // 3. Confirm the order can be read back from MySQL through PHP.
+        const verifyResponse = await fetch(`${API_URL}?action=orders`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const verifyData = await readResponse(verifyResponse, "Verify order failed");
+
+        if (Array.isArray(verifyData.orders)) {
+          savedToMySQL = true;
+        }
+      } catch (apiError) {
+        console.warn("MySQL API connection failed, continuing with local storage:", apiError);
       }
-      const updatedOrders = [finalSavedOrder, ...existingOrders];
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-      setSuccess(true);
-      clearCart();
-      setActiveInvoice(finalSavedOrder);
-
-      alert(
-        `🎉 បានកុម្ម៉ង់ដោយជោគជ័យ និងរក្សាទុកក្នុង MySQL Database!\n` +
-        `កូដកុម្ម៉ង់: ${orderNumber}\n` +
-        `អតិថិជន: ${form.fullName}\n` +
-        `សរុប: $${total.toFixed(2)} (≈ ${approxTotalRiel} ៛)\n` +
-        `ការទូទាត់: ${form.payment}\n\n` +
-        `លោកអ្នកអាចផ្ញើការកុម្ម៉ង់នេះទៅកាន់ Telegram (${TELEGRAM_PHONE}) ក្នុងវិក្កយបត្រ!`
-      );
-    } catch (error) {
-      console.error("Checkout API Error:", error);
-      alert(`⚠️ មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`);
     }
+
+    // Generate Telegram Link
+    const itemsSummary = products.map((p) => `${p.name} x${p.quantity}`).join(", ");
+    const telegramMessage = encodeURIComponent(
+      `🛍️ ការកុម្ម៉ង់ថ្មី (#${orderNumber}) ពី FreshMart!\n` +
+      `👤 អតិថិជន: ${form.fullName}\n` +
+      `📞 ទូរស័ព្ទ: ${form.phone}\n` +
+      `📍 ទីតាំង: ${form.address}\n` +
+      `💳 ការទូទាត់: ${form.payment}\n` +
+      `📦 ទំនិញ: ${itemsSummary}\n` +
+      `💵 សរុប: $${total.toFixed(2)} USD (≈ ${approxTotalRiel} ៛)`
+    );
+    const telegramUrl = `https://t.me/+855979937524?text=${telegramMessage}`;
+
+    const finalSavedOrder = {
+      ...savedOrder,
+      telegramUrl,
+    };
+
+    // 4. Save to localStorage (available immediately in Admin Dashboard)
+    let existingOrders = [];
+    try {
+      existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    } catch {
+      existingOrders = [];
+    }
+    const updatedOrders = [finalSavedOrder, ...existingOrders];
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+    setSuccess(true);
+    clearCart();
+    setActiveInvoice(finalSavedOrder);
+
+    alert(
+      `🎉 បានកុម្ម៉ង់ដោយជោគជ័យ!\n` +
+      `កូដកុម្ម៉ង់: ${orderNumber}\n` +
+      `អតិថិជន: ${form.fullName}\n` +
+      `សរុប: $${total.toFixed(2)} (≈ ${approxTotalRiel} ៛)\n` +
+      `ការទូទាត់: ${form.payment}\n` +
+      (savedToMySQL ? `(រក្សាទុកក្នុង MySQL Database ✅)` : `(រក្សាទុកក្នុង Local/Cloud Storage ✅)`) +
+      `\n\nលោកអ្នកអាចផ្ញើការកុម្ម៉ង់នេះទៅកាន់ Telegram (${TELEGRAM_PHONE}) ក្នុងវិក្កយបត្រ!`
+    );
   };
 
   const handleSubmit = (e) => {

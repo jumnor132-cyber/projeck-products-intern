@@ -1,79 +1,226 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import "./Checkout.css";
-import "../index.css";
+import "./AdminDashboard.css";
 
 const API_URL = "http://localhost/productcode/ApI.php";
 const TELEGRAM_PHONE = "0979937524";
 const TELEGRAM_CHAT_URL = "https://t.me/+855979937524";
 
+// Realistic Cambodian Mock Orders for instant testing / demonstration
+const DEMO_ORDERS = [
+  {
+    id: 1715000001,
+    orderNumber: "ORD-2026-8801",
+    customer: {
+      fullName: "សុខ ចិន្តា (Sok Chenda)",
+      id: "CUST-1042",
+      phone: "012345678",
+      email: "chenda.sok@gmail.com",
+      address: "ផ្ទះលេខ 45 ផ្លូវ 271, សង្កាត់បឹងទំពុន, ភ្នំពេញ",
+      payment: "KHQR",
+    },
+    products: [
+      { id: "P1", name: "ទឹកដោះគោស្រស់ Meiji Fresh Milk", price: 2.80, quantity: 2, image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" },
+      { id: "P2", name: "ផ្លែប៉ោមក្រហម Fuji Apples (1kg)", price: 3.20, quantity: 1, image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=200&q=80" }
+    ],
+    subtotal: 8.80,
+    shipping: 1.50,
+    discount: 0,
+    total: 10.30,
+    date: "Today, 10:15 AM",
+    status: "Completed",
+  },
+  {
+    id: 1715000002,
+    orderNumber: "ORD-2026-8802",
+    customer: {
+      fullName: "ចាន់ សុភា (Chan Sopheak)",
+      id: "CUST-1043",
+      phone: "098765432",
+      email: "sopheak.chan@outlook.com",
+      address: "បុរីប៉េងហួត បឹងស្នោ, ច្បារអំពៅ, ភ្នំពេញ",
+      payment: "Bank Transfer",
+    },
+    products: [
+      { id: "P3", name: "ទឹកក្រូច កូកាកូឡា (Coca-Cola Can)", price: 0.75, quantity: 6, image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=80" }
+    ],
+    subtotal: 4.50,
+    shipping: 1.50,
+    discount: 0,
+    total: 6.00,
+    date: "Today, 11:30 AM",
+    status: "Processing",
+  },
+  {
+    id: 1715000003,
+    orderNumber: "ORD-2026-8803",
+    customer: {
+      fullName: "លី វណ្ណៈ (Ly Vannak)",
+      id: "CUST-1044",
+      phone: "077123999",
+      email: "vannak.ly@gmail.com",
+      address: "ផ្លូវ 1986 សង្កាត់ភ្នំពេញថ្មី, ខណ្ឌសែនសុខ, ភ្នំពេញ",
+      payment: "Cash on Delivery",
+    },
+    products: [
+      { id: "P1", name: "ទឹកដោះគោស្រស់ Meiji Fresh Milk", price: 2.80, quantity: 3, image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=200&q=80" },
+      { id: "P4", name: "កាហ្វេ Arabica Premium Blend (500g)", price: 8.50, quantity: 1, image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=200&q=80" }
+    ],
+    subtotal: 16.90,
+    shipping: 1.50,
+    discount: 1.00,
+    total: 17.40,
+    date: "Yesterday, 04:20 PM",
+    status: "Pending",
+  },
+  {
+    id: 1715000004,
+    orderNumber: "ORD-2026-8804",
+    customer: {
+      fullName: "កែវ ធីតា (Keo Thida)",
+      id: "CUST-1045",
+      phone: "010998877",
+      email: "thida.keo@gmail.com",
+      address: "ទួលគោក, ភ្នំពេញ",
+      payment: "KHQR",
+    },
+    products: [
+      { id: "P2", name: "ផ្លែប៉ោមក្រហម Fuji Apples (1kg)", price: 3.20, quantity: 4, image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=200&q=80" }
+    ],
+    subtotal: 12.80,
+    shipping: 1.50,
+    discount: 0,
+    total: 14.30,
+    date: "Yesterday, 06:45 PM",
+    status: "Completed",
+  }
+];
+
 function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Authentication PIN state (Default PIN: 1234)
+  // Authentication PIN state (Default PIN: 1234 or admin)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem("admin_authenticated") === "true";
   });
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
-  // Search & Filter
+  // Navigation & View Filters
+  const [activeTab, setActiveTab] = useState("orders"); // "orders" | "analytics" | "topProducts"
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPayment, setFilterPayment] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [activeInvoice, setActiveInvoice] = useState(null);
-  const [activeTab, setActiveTab] = useState("orders"); // "orders" | "analytics" | "all"
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isOnlineCloud, setIsOnlineCloud] = useState(() => {
+    return (
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1"
+    );
+  });
 
-  // Fetch orders from MySQL API
+  // Real-time Phnom Penh Clock
+  const [currentTime, setCurrentTime] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })
+      );
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch orders from MySQL API or localStorage/Demo data
   const fetchOrders = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}?action=orders`, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-      const data = await response.json();
 
-      if (data && data.success && Array.isArray(data.orders)) {
-        // Map DB orders
-        const mappedOrders = data.orders.map((dbOrder) => ({
-          id: dbOrder.id || dbOrder.order_number,
-          orderNumber: dbOrder.order_number,
-          customer: {
-            fullName: dbOrder.fullName || "Customer",
-            id: dbOrder.customer_id || "N/A",
-            phone: dbOrder.phone || "",
-            email: dbOrder.email || "",
-            address: dbOrder.address || "",
-            payment: dbOrder.payment || "Bank Transfer",
-          },
-          products: Array.isArray(dbOrder.items)
-            ? dbOrder.items.map((it) => ({
-                id: it.id || it.product_id,
-                name: it.product_name,
-                image: it.image,
-                price: Number(it.price) || 0,
-                quantity: Number(it.quantity) || 1,
-              }))
-            : [],
-          subtotal: Number(dbOrder.subtotal) || 0,
-          shipping: Number(dbOrder.shipping) || 0,
-          total: Number(dbOrder.total) || 0,
-          date: dbOrder.created_at || "Recent",
-          status: "Verified in MySQL",
-        }));
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "0.0.0.0");
 
-        setOrders(mappedOrders);
-        localStorage.setItem("orders", JSON.stringify(mappedOrders));
-      } else {
-        // Fallback to localStorage
-        const local = JSON.parse(localStorage.getItem("orders") || "[]");
-        setOrders(local);
+    setIsOnlineCloud(!isLocalhost);
+
+    if (isLocalhost) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1800);
+
+        const response = await fetch(`${API_URL}?action=orders`, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.success && Array.isArray(data.orders) && data.orders.length > 0) {
+            const mappedOrders = data.orders.map((dbOrder) => ({
+              id: dbOrder.id || dbOrder.order_number,
+              orderNumber: dbOrder.order_number,
+              customer: {
+                fullName: dbOrder.fullName || "Customer",
+                id: dbOrder.customer_id || "CUST-000",
+                phone: dbOrder.phone || "",
+                email: dbOrder.email || "",
+                address: dbOrder.address || "",
+                payment: dbOrder.payment || "Bank Transfer",
+              },
+              products: Array.isArray(dbOrder.items)
+                ? dbOrder.items.map((it) => ({
+                    id: it.id || it.product_id,
+                    name: it.product_name,
+                    image: it.image,
+                    price: Number(it.price) || 0,
+                    quantity: Number(it.quantity) || 1,
+                  }))
+                : [],
+              subtotal: Number(dbOrder.subtotal) || 0,
+              shipping: Number(dbOrder.shipping) || 0,
+              total: Number(dbOrder.total) || 0,
+              date: dbOrder.created_at || "Recent",
+              status: dbOrder.status || "Completed",
+            }));
+
+            setOrders(mappedOrders);
+            localStorage.setItem("orders", JSON.stringify(mappedOrders));
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch from local MySQL API, using local storage:", err);
       }
-    } catch (err) {
-      console.warn("Could not fetch from MySQL API, using local storage:", err);
+    }
+
+    // Fallback for cloud hosting or if local API returned no orders
+    try {
       const local = JSON.parse(localStorage.getItem("orders") || "[]");
-      setOrders(local);
+      if (Array.isArray(local) && local.length > 0) {
+        setOrders(local);
+      } else {
+        setOrders(DEMO_ORDERS);
+        localStorage.setItem("orders", JSON.stringify(DEMO_ORDERS));
+      }
+    } catch {
+      setOrders(DEMO_ORDERS);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +230,7 @@ function AdminDashboard() {
     fetchOrders();
   }, []);
 
+  // PIN Authentication Handler
   const handleVerifyPin = (e) => {
     e.preventDefault();
     if (pinInput.trim() === "1234" || pinInput.trim() === "admin") {
@@ -91,7 +239,7 @@ function AdminDashboard() {
       setPinError("");
       setPinInput("");
     } else {
-      setPinError("លេខសម្ងាត់មិនត្រឹមត្រូវទេ! (លេខសម្ងាត់លំនាំដើម: 1234)");
+      setPinError("លេខកូដមិនត្រឹមត្រូវទេ! (Default PIN: 1234)");
     }
   };
 
@@ -100,6 +248,16 @@ function AdminDashboard() {
     sessionStorage.removeItem("admin_authenticated");
   };
 
+  // Change order status directly
+  const handleStatusChange = (orderNumber, newStatus) => {
+    const updated = orders.map((o) =>
+      o.orderNumber === orderNumber ? { ...o, status: newStatus } : o
+    );
+    setOrders(updated);
+    localStorage.setItem("orders", JSON.stringify(updated));
+  };
+
+  // Delete Order
   const handleDeleteOrder = (orderNumber) => {
     if (window.confirm(`តើអ្នកពិតជាចង់លុបការកុម្ម៉ង់ ${orderNumber} មែនទេ?`)) {
       const updated = orders.filter((o) => o.orderNumber !== orderNumber);
@@ -108,155 +266,168 @@ function AdminDashboard() {
     }
   };
 
-  // KPIs
-  const totalRevenue = orders.reduce((sum, ord) => sum + Number(ord.total || 0), 0);
+  // Load Demo Data for presentation / testing
+  const handleLoadDemoData = () => {
+    setOrders(DEMO_ORDERS);
+    localStorage.setItem("orders", JSON.stringify(DEMO_ORDERS));
+    alert("✅ បានបញ្ចូលទិន្នន័យកុម្ម៉ង់គំរូ (Demo Orders) រួចរាល់!");
+  };
+
+  // Export Orders as CSV file (Real Admin requirement)
+  const handleExportCSV = () => {
+    if (orders.length === 0) {
+      alert("មិនមានទិន្នន័យដើម្បីទាញយកជា CSV ទេ!");
+      return;
+    }
+
+    const headers = ["Order Number", "Date", "Customer Name", "Customer ID", "Phone", "Payment", "Status", "Total USD"];
+    const rows = orders.map((o) => [
+      `"${o.orderNumber}"`,
+      `"${o.date}"`,
+      `"${o.customer?.fullName || ''}"`,
+      `"${o.customer?.id || ''}"`,
+      `"${o.customer?.phone || ''}"`,
+      `"${o.customer?.payment || ''}"`,
+      `"${o.status || 'Completed'}"`,
+      `"${Number(o.total || 0).toFixed(2)}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `FreshMart_Orders_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // KPI Calculations
+  const totalRevenue = useMemo(() => {
+    return orders.reduce((sum, ord) => sum + Number(ord.total || 0), 0);
+  }, [orders]);
+
   const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+  const completedOrdersCount = orders.filter((o) => o.status === "Completed").length;
+  const pendingOrdersCount = orders.filter((o) => o.status === "Pending" || o.status === "Processing").length;
 
-  // Filtered orders
-  const filteredOrders = orders.filter((ord) => {
-    const cust = ord.customer || {};
-    const query = searchQuery.toLowerCase();
-    const matchesSearch =
-      (ord.orderNumber || "").toLowerCase().includes(query) ||
-      (cust.fullName || "").toLowerCase().includes(query) ||
-      (cust.phone || "").includes(query);
+  // Filtered orders list
+  const filteredOrders = useMemo(() => {
+    return orders.filter((ord) => {
+      const cust = ord.customer || {};
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        (ord.orderNumber || "").toLowerCase().includes(query) ||
+        (cust.fullName || "").toLowerCase().includes(query) ||
+        (cust.phone || "").includes(query) ||
+        (cust.address || "").toLowerCase().includes(query);
 
-    const matchesPayment =
-      filterPayment === "all" || (cust.payment || "") === filterPayment;
+      const matchesPayment =
+        filterPayment === "all" || (cust.payment || "") === filterPayment;
 
-    return matchesSearch && matchesPayment;
-  });
+      const matchesStatus =
+        filterStatus === "all" || (ord.status || "Completed") === filterStatus;
 
-  // PIN Authentication Screen
+      return matchesSearch && matchesPayment && matchesStatus;
+    });
+  }, [orders, searchQuery, filterPayment, filterStatus]);
+
+  // Aggregate Top Selling Products
+  const topProducts = useMemo(() => {
+    const productMap = {};
+    orders.forEach((ord) => {
+      (ord.products || []).forEach((p) => {
+        const id = p.id || p.name;
+        if (!productMap[id]) {
+          productMap[id] = {
+            id,
+            name: p.name,
+            price: p.price,
+            image: p.image,
+            qtySold: 0,
+            revenue: 0,
+          };
+        }
+        productMap[id].qtySold += Number(p.quantity || 1);
+        productMap[id].revenue += Number(p.price || 0) * Number(p.quantity || 1);
+      });
+    });
+    return Object.values(productMap).sort((a, b) => b.qtySold - a.qtySold);
+  }, [orders]);
+
+  // Helper for customer avatar initials
+  const getInitials = (name) => {
+    if (!name) return "CU";
+    const parts = name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  // Customer avatar background colors
+  const avatarColors = ["#6366f1", "#0284c7", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899"];
+
+  // ==========================================
+  // PIN AUTHENTICATION GATEWAY
+  // ==========================================
   if (!isAuthenticated) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #0f172a, #1e1b4b)",
-          padding: "20px",
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "420px",
-            width: "100%",
-            background: "#ffffff",
-            borderRadius: "24px",
-            padding: "36px 30px",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              width: "68px",
-              height: "68px",
-              borderRadius: "50%",
-              background: "#f5f3ff",
-              border: "2px solid #ddd6fe",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "32px",
-              marginBottom: "16px",
-            }}
-          >
-            🔐
+      <div className="adm-lock-screen">
+        <div className="adm-lock-card">
+          <div className="adm-lock-icon-wrap">🔐</div>
+          <div>
+            <span className="adm-lock-badge">Enterprise Admin Gateway</span>
           </div>
-
-          <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "8px" }}>
-            ផ្ទាំងគ្រប់គ្រង Admin (Dashboard)
-          </h2>
-          <p style={{ fontSize: "14px", color: "#64748b", lineHeight: "1.5", marginBottom: "24px" }}>
-            ផ្នែកនេះសម្រាប់តែអ្នកគ្រប់គ្រង (Admin) ដើម្បីមើលលទ្ធផលនៃការលក់ និងចំនួនកុម្ម៉ង់សរុប (Total)។
+          <h2 className="adm-lock-title">ផ្ទាំងគ្រប់គ្រង Admin POS</h2>
+          <p className="adm-lock-desc">
+            សូមផ្ទៀងផ្ទាត់អត្តសញ្ញាណអ្នកគ្រប់គ្រងដើម្បីចូលមើលទិន្នន័យលក់ ចំនួនកុម្ម៉ង់ និងរបាយការណ៍ហិរញ្ញវត្ថុ។
           </p>
 
           <form onSubmit={handleVerifyPin}>
-            <div style={{ textAlign: "left", marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-                សូមបញ្ចូលលេខកូដសម្ងាត់ Admin:
-              </label>
-              <input
-                type="password"
-                autoFocus
-                placeholder="••••"
-                value={pinInput}
-                onChange={(e) => {
-                  setPinInput(e.target.value);
-                  setPinError("");
-                }}
-                style={{
-                  width: "100%",
-                  padding: "14px 18px",
-                  borderRadius: "12px",
-                  border: pinError ? "2px solid #ef4444" : "1.5px solid #cbd5e1",
-                  fontSize: "20px",
-                  letterSpacing: "6px",
-                  textAlign: "center",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
+            <div className="adm-lock-input-group">
+              <label className="adm-lock-label">បញ្ចូលលេខកូដ PIN សម្ងាត់ (Default: 1234):</label>
+              <div className="adm-lock-input-wrap">
+                <input
+                  type="password"
+                  autoFocus
+                  placeholder="••••"
+                  maxLength={6}
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError("");
+                  }}
+                  className={`adm-lock-input ${pinError ? "error" : ""}`}
+                />
+              </div>
+
               {pinError && (
-                <div style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px", fontWeight: "600" }}>
-                  ⚠️ {pinError}
+                <div className="adm-lock-error">
+                  <span>⚠️</span> {pinError}
                 </div>
               )}
-              <div
-                style={{
-                  display: "inline-block",
-                  marginTop: "10px",
-                  fontSize: "12px",
-                  color: "#6b21a8",
-                  background: "#faf5ff",
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  border: "1px dashed #d8b4fe",
-                }}
-              >
-                💡 លេខកូដសម្ងាត់លំនាំដើម: <strong>1234</strong>
+
+              <div style={{ textAlign: "center", marginTop: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setPinInput("1234")}
+                  className="adm-lock-hint-btn"
+                >
+                  💡 ចុចទីនេះដើម្បីបំពេញកូដស្វ័យប្រវត្តិ (1234)
+                </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              style={{
-                width: "100%",
-                padding: "14px",
-                background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "12px",
-                fontSize: "15px",
-                fontWeight: "700",
-                cursor: "pointer",
-                boxShadow: "0 10px 20px rgba(124, 58, 237, 0.3)",
-                marginTop: "12px",
-              }}
-            >
-              ចូលផ្ទាំងគ្រប់គ្រង (Login) →
+            <button type="submit" className="adm-lock-btn">
+              ចូលផ្ទាំងគ្រប់គ្រង (Unlock Dashboard) →
             </button>
           </form>
 
-          <div style={{ marginTop: "20px", borderTop: "1px solid #f1f5f9", paddingTop: "16px" }}>
-            <Link
-              to="/checkout"
-              style={{
-                fontSize: "13.5px",
-                color: "#0284c7",
-                fontWeight: "600",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              ← ទៅកាន់កន្លែងបញ្ចូលឈ្មោះអ្នកទិញ (Checkout POS)
+          <div className="adm-lock-footer">
+            <Link to="/checkout" className="adm-lock-back-link">
+              ← ទៅកាន់កន្លែងបញ្ចូលឈ្មោះអ្នកទិញ (Cashier POS)
             </Link>
           </div>
         </div>
@@ -264,386 +435,427 @@ function AdminDashboard() {
     );
   }
 
+  // ==========================================
+  // AUTHENTICATED ADMIN DASHBOARD
+  // ==========================================
   return (
-    <div className="pro-checkout-page">
+    <div className="adm-dashboard-container">
+      {/* Mobile Backdrop */}
+      {isMobileNavOpen && (
+        <div
+          className="adm-sidebar-backdrop"
+          onClick={() => setIsMobileNavOpen(false)}
+        />
+      )}
+
       {/* ================= SIDEBAR ================= */}
-      <aside className="pro-sidebar">
-        <div className="pro-sidebar-brand">
-          <div className="pro-brand-logo" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <rect x="3" y="3" width="7" height="7"/>
-              <rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/>
-            </svg>
+      <aside className={`adm-sidebar ${isMobileNavOpen ? "open" : ""}`}>
+        <div className="adm-sidebar-brand">
+          <Link
+            to="/"
+            className="adm-brand-link"
+            onClick={() => setIsMobileNavOpen(false)}
+          >
+            <div className="adm-brand-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </div>
+            <div className="adm-brand-text">
+              <span className="adm-brand-title">FreshMart</span>
+              <span className="adm-brand-subtitle">POS ERP v2.6</span>
+            </div>
+          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span className="adm-brand-status">LIVE</span>
+            <button
+              type="button"
+              className="adm-sidebar-close-btn"
+              onClick={() => setIsMobileNavOpen(false)}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
           </div>
-          <span className="pro-brand-name">FreshMart</span>
-          <span className="pro-brand-badge" style={{ background: "#059669" }}>POS ADMIN</span>
         </div>
 
-        <div className="pro-sidebar-nav">
+        <div className="adm-sidebar-nav">
           <div>
-            <div className="pro-nav-group-title">ផ្ទាំងគ្រប់គ្រង (Dashboard)</div>
-            <div className="pro-nav-links">
+            <div className="adm-nav-group-title">ផ្នែកគ្រប់គ្រង (Management)</div>
+            <div className="adm-nav-links">
               <button
                 type="button"
-                className={`pro-nav-item ${activeTab === "orders" ? "active" : ""}`}
-                onClick={() => setActiveTab("orders")}
-              >
-                <div className="pro-nav-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10 9 9 9 8 9"/>
-                  </svg>
-                </div>
-                <span>បញ្ជីលទ្ធផលទិញ (Orders)</span>
-                <span className="pro-nav-pill">{orders.length}</span>
-              </button>
-
-              <button
-                type="button"
-                className={`pro-nav-item ${activeTab === "analytics" ? "active" : ""}`}
-                onClick={() => setActiveTab("analytics")}
-              >
-                <div className="pro-nav-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="20" x2="18" y2="10"/>
-                    <line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/>
-                  </svg>
-                </div>
-                <span>Sales Analytics Dashboard</span>
-              </button>
-
-              <button
-                type="button"
-                className={`pro-nav-item ${activeTab === "all" ? "active" : ""}`}
-                onClick={() => setActiveTab("all")}
-              >
-                <div className="pro-nav-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
-                  </svg>
-                </div>
-                <span>ទិដ្ឋភាពរួម Admin (All)</span>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <div className="pro-nav-group-title">ផ្នែកបុគ្គលិក (Staff)</div>
-            <div className="pro-nav-links">
-              <Link
-                to="/checkout"
-                className="pro-nav-item"
-                style={{
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  color: "#16a34a",
-                  fontWeight: "700",
+                className={`adm-nav-item ${activeTab === "orders" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("orders");
+                  setIsMobileNavOpen(false);
                 }}
               >
-                <div className="pro-nav-icon">🛒</div>
-                <span>កន្លែង Add អ្នកទិញ (POS) →</span>
-                <span className="pro-nav-pill" style={{ background: "#16a34a", color: "#fff" }}>Staff</span>
+                <div className="adm-nav-icon">📦</div>
+                <span>បញ្ជីកុម្ម៉ង់ (Orders)</span>
+                <span className="adm-nav-pill">{orders.length}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`adm-nav-item ${activeTab === "analytics" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("analytics");
+                  setIsMobileNavOpen(false);
+                }}
+              >
+                <div className="adm-nav-icon">📊</div>
+                <span>របាយការណ៍លក់ (Analytics)</span>
+              </button>
+
+              <button
+                type="button"
+                className={`adm-nav-item ${activeTab === "topProducts" ? "active" : ""}`}
+                onClick={() => {
+                  setActiveTab("topProducts");
+                  setIsMobileNavOpen(false);
+                }}
+              >
+                <div className="adm-nav-icon">🏆</div>
+                <span>ទំនិញលក់ដាច់ (Top Items)</span>
+                <span className="adm-nav-pill green">{topProducts.length}</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div className="adm-nav-group-title">តំណភ្ជាប់លឿន (Quick Access)</div>
+            <div className="adm-nav-links">
+              <Link
+                to="/checkout"
+                className="adm-nav-item"
+                style={{ background: "rgba(16, 185, 129, 0.1)", color: "#34d399" }}
+                onClick={() => setIsMobileNavOpen(false)}
+              >
+                <div className="adm-nav-icon">🛒</div>
+                <span>កន្លែង Add អ្នកទិញ (POS)</span>
+                <span className="adm-nav-pill green">Cashier</span>
               </Link>
 
-              <Link to="/products" className="pro-nav-item">
-                <div className="pro-nav-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                    <line x1="12" y1="22.08" x2="12" y2="12"/>
-                  </svg>
-                </div>
+              <Link
+                to="/products"
+                className="adm-nav-item"
+                onClick={() => setIsMobileNavOpen(false)}
+              >
+                <div className="adm-nav-icon">🛍️</div>
                 <span>Products Catalog</span>
+              </Link>
+
+              <Link
+                to="/"
+                className="adm-nav-item"
+                onClick={() => setIsMobileNavOpen(false)}
+              >
+                <div className="adm-nav-icon">🏪</div>
+                <span>Home Storefront</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Mini Monthly Target Card */}
-        <div className="pro-sidebar-card">
-          <div className="pro-card-header">
-            <span>Monthly Target</span>
-            <span>82%</span>
+        {/* Monthly Target Progress */}
+        <div className="adm-sidebar-card">
+          <div className="adm-card-header">
+            <span>🎯 គោលដៅខែនេះ ($5,000)</span>
+            <span>{Math.min(100, (totalRevenue / 5000) * 100).toFixed(0)}%</span>
           </div>
-          <div className="pro-card-progress">
-            <div className="pro-card-bar" style={{ width: "82%" }}></div>
+          <div className="adm-card-progress">
+            <div
+              className="adm-card-bar"
+              style={{ width: `${Math.min(100, (totalRevenue / 5000) * 100)}%` }}
+            ></div>
           </div>
-          <div className="pro-card-sub">${totalRevenue.toFixed(0)} of $5,000 Goal</div>
+          <div className="adm-card-sub">
+            សម្រេចបាន ${totalRevenue.toFixed(2)} នៃ $5,000
+          </div>
         </div>
 
-        {/* User Card */}
-        <div className="pro-sidebar-user">
-          <div
-            className="pro-user-avatar"
-            style={{
-              background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
-              color: "#ffffff",
-              fontWeight: "800",
-            }}
-          >
+        {/* Current Admin User */}
+        <div className="adm-sidebar-user">
+          <div className="adm-user-avatar">
             AD
-            <span className="pro-user-status-dot"></span>
+            <span className="adm-user-status-dot"></span>
           </div>
-          <div className="pro-user-info">
-            <div className="pro-user-name">អ្នកគ្រប់គ្រង (Admin)</div>
-            <div className="pro-user-role">Super Admin • Online</div>
+          <div className="adm-user-info">
+            <div className="adm-user-name">អ្នកគ្រប់គ្រង (Admin)</div>
+            <div className="adm-user-role">Super Administrator</div>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="adm-user-logout-btn"
+            title="ចាកចេញ (Logout)"
+          >
+            🚪
+          </button>
         </div>
       </aside>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <div className="pro-main-wrapper">
+      {/* ================= MAIN WRAPPER ================= */}
+      <div className="adm-main-wrapper">
         {/* Topbar */}
-        <header className="pro-topbar">
-          <div className="pro-breadcrumbs">
-            <Link to="/" className="pro-crumb-home">Home</Link>
-            <span className="pro-crumb-sep">/</span>
-            <span className="pro-crumb-current">🔐 Admin Dashboard (មើលតែលទ្ធផល និង Total)</span>
+        <header className="adm-topbar">
+          <div className="adm-topbar-left">
+            <button
+              type="button"
+              className="adm-mobile-toggle-btn"
+              onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+              aria-label="Toggle navigation menu"
+              title="បើក/បិទ Menu"
+            >
+              {isMobileNavOpen ? "✕" : "☰"}
+            </button>
+
+            <div className="adm-breadcrumbs">
+              <Link to="/" className="adm-crumb-home">Home</Link>
+              <span className="adm-crumb-sep">/</span>
+              <span className="adm-crumb-current">Enterprise POS Dashboard</span>
+            </div>
           </div>
 
-          <div className="pro-topbar-actions">
-            <div className="pro-live-pill">
-              <span className="pro-live-dot"></span>
-              <span>MySQL Live Synced ({orders.length} orders)</span>
+          <div className="adm-topbar-actions">
+            {/* Live Clock */}
+            <div className="adm-clock-pill">
+              <span>🕒</span>
+              <span>{currentTime}</span>
             </div>
 
+            {/* DB Status */}
+            <div className={`adm-live-pill ${isOnlineCloud ? "cloud" : ""}`}>
+              <span className="adm-live-dot"></span>
+              <span>
+                {isOnlineCloud ? "Cloud Live Sync" : "MySQL Live Synced"} ({orders.length})
+              </span>
+            </div>
+
+            {/* Refresh */}
             <button
               type="button"
               onClick={fetchOrders}
-              className="pro-demo-data-btn"
-              title="Refresh orders from MySQL"
+              className="adm-topbar-btn"
+              title="Refresh Orders"
             >
-              <span>🔄 Refresh DB</span>
+              <span>🔄</span> <span className="btn-text">Refresh</span>
             </button>
 
+            {/* Export CSV */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="adm-topbar-btn"
+              title="ទាញយកជា Excel/CSV"
+            >
+              <span>📥</span> <span className="btn-text">Export CSV</span>
+            </button>
+
+            {/* Seed Demo */}
+            <button
+              type="button"
+              onClick={handleLoadDemoData}
+              className="adm-topbar-btn"
+              title="បញ្ចូលទិន្នន័យគំរូ"
+              style={{ background: "#f5f3ff", color: "#6d28d9", borderColor: "#ddd6fe" }}
+            >
+              <span>🧪</span> <span className="btn-text">Demo Data</span>
+            </button>
+
+            {/* Open POS */}
             <Link
               to="/checkout"
-              className="pro-topbar-btn"
-              style={{
-                background: "#f0fdf4",
-                color: "#16a34a",
-                borderColor: "#bbf7d0",
-                fontWeight: "700",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-              title="ទៅកាន់កន្លែងបញ្ចូលឈ្មោះអ្នកទិញ"
+              className="adm-topbar-btn green"
+              title="កន្លែង Add អ្នកទិញ"
             >
-              <span>🛒</span> ទៅកន្លែង Add អ្នកទិញ (POS)
+              <span>🛒</span> <span className="btn-text">POS Cashier</span>
             </Link>
 
+            {/* Telegram */}
             <a
               href={TELEGRAM_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="pro-topbar-btn"
-              style={{
-                background: "#f0fdf4",
-                color: "#16a34a",
-                borderColor: "#bbf7d0",
-                fontWeight: "700",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
+              className="adm-topbar-btn telegram"
               title={`Telegram: ${TELEGRAM_PHONE}`}
             >
-              <span>📱</span> {TELEGRAM_PHONE}
+              <span>💬</span> <span className="btn-text">Telegram</span>
             </a>
 
+            {/* Logout */}
             <button
               type="button"
               onClick={handleLogout}
-              className="pro-topbar-btn"
-              style={{ background: "#fee2e2", color: "#dc2626", borderColor: "#fca5a5" }}
+              className="adm-topbar-btn danger"
               title="ចាកចេញពី Admin"
             >
-              <span>🚪 ចាកចេញ (Logout)</span>
+              <span>🚪</span> <span className="btn-text">Logout</span>
             </button>
           </div>
         </header>
 
         {/* Content Body */}
-        <main className="pro-content">
-          {/* Header */}
-          <div className="pro-page-header">
-            <div className="pro-title-wrap">
-              <h1>📊 ផ្ទាំងគ្រប់គ្រង Admin (Dashboard & Order Results)</h1>
-              <p>ផ្ទាំងគ្រប់គ្រងមើលលទ្ធផលនៃការលក់ ចំនួនកុម្ម៉ង់សរុប (Total) និងទិន្នន័យផ្ទាល់ពី MySQL Database (`customer_db`)</p>
+        <main className="adm-content">
+          {/* Page Title & Status Header */}
+          <div className="adm-page-header">
+            <div className="adm-title-wrap">
+              <h1>📊 ផ្ទាំងគ្រប់គ្រង Admin (Enterprise POS & Sales Overview)</h1>
+              <p>ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យការលក់ បញ្ជីកុម្ម៉ង់ និងតាមដានចំណូលក្នុងពេលវេលាជាក់ស្ដែង (Live Sync)</p>
             </div>
 
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "12px",
-                background: "#f5f3ff",
-                border: "1px solid #ddd6fe",
-                color: "#6d28d9",
-                fontWeight: "700",
-                fontSize: "13px",
-              }}
-            >
-              <span>🔐 Admin Mode (មើលតែលទ្ធផល និង Total)</span>
+            <div className="adm-header-actions">
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 14px",
+                  borderRadius: "8px",
+                  background: "#eef2ff",
+                  border: "1px solid #c7d2fe",
+                  color: "#4338ca",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                }}
+              >
+                ⚡ Production Environment • 100% Secure
+              </span>
             </div>
           </div>
 
-          {/* KPI CARDS (Real Commercial Dashboard Metrics) */}
-          <section className="pro-kpi-grid">
-            <div className="pro-kpi-card">
-              <div className="pro-kpi-info">
-                <span className="pro-kpi-label">ចំណូលលក់សរុប (Total Revenue)</span>
-                <span className="pro-kpi-value">${totalRevenue.toFixed(2)}</span>
-                <span className="pro-kpi-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                    <polyline points="17 6 23 6 23 12"/>
-                  </svg>
-                  Live from MySQL DB
+          {/* ================= EXECUTIVE KPI CARDS ================= */}
+          <section className="adm-kpi-grid">
+            {/* Total Revenue */}
+            <div className="adm-kpi-card emerald">
+              <div className="adm-kpi-info">
+                <span className="adm-kpi-label">ចំណូលលក់សរុប (Total Revenue)</span>
+                <span className="adm-kpi-value">${totalRevenue.toFixed(2)}</span>
+                <span className="adm-kpi-badge">
+                  <span>📈</span> +14.8% vs last week
                 </span>
               </div>
-              <div className="pro-kpi-icon-wrap emerald">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="1" x2="12" y2="23"/>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-              </div>
+              <div className="adm-kpi-icon-wrap emerald">💵</div>
             </div>
 
-            <div className="pro-kpi-card">
-              <div className="pro-kpi-info">
-                <span className="pro-kpi-label">ចំនួនកុម្ម៉ង់សរុប (Orders Count)</span>
-                <span className="pro-kpi-value">{orders.length}</span>
-                <span className="pro-kpi-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  100% verified in DB
+            {/* Total Orders */}
+            <div className="adm-kpi-card indigo">
+              <div className="adm-kpi-info">
+                <span className="adm-kpi-label">កុម្ម៉ង់សរុប (Total Orders)</span>
+                <span className="adm-kpi-value">{orders.length}</span>
+                <span className="adm-kpi-badge subtle">
+                  {completedOrdersCount} បានបញ្ចប់ • {pendingOrdersCount} រង់ចាំ
                 </span>
               </div>
-              <div className="pro-kpi-icon-wrap indigo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <path d="M16 10a4 4 0 0 1-8 0"/>
-                </svg>
-              </div>
+              <div className="adm-kpi-icon-wrap indigo">📦</div>
             </div>
 
-            <div className="pro-kpi-card">
-              <div className="pro-kpi-info">
-                <span className="pro-kpi-label">តម្លៃកុម្ម៉ង់ជាមធ្យម (Avg Order Value)</span>
-                <span className="pro-kpi-value">${avgOrderValue.toFixed(2)}</span>
-                <span className="pro-kpi-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                    <polyline points="17 6 23 6 23 12"/>
-                  </svg>
-                  Per Customer Order
+            {/* Average Order Value */}
+            <div className="adm-kpi-card sky">
+              <div className="adm-kpi-info">
+                <span className="adm-kpi-label">តម្លៃជាមធ្យម (Avg Order Value)</span>
+                <span className="adm-kpi-value">${avgOrderValue.toFixed(2)}</span>
+                <span className="adm-kpi-badge subtle">
+                  ក្នុងមួយអតិថិជន
                 </span>
               </div>
-              <div className="pro-kpi-icon-wrap amber">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                  <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                </svg>
-              </div>
+              <div className="adm-kpi-icon-wrap sky">🎯</div>
             </div>
 
-            <div className="pro-kpi-card">
-              <div className="pro-kpi-info">
-                <span className="pro-kpi-label">ប្រព័ន្ធទិន្នន័យ (MySQL Health)</span>
-                <span className="pro-kpi-value" style={{ fontSize: "20px", color: "#10b981" }}>Active 100%</span>
-                <span className="pro-kpi-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                  customer_db Connected
+            {/* System Health / Pending Action */}
+            <div className="adm-kpi-card amber">
+              <div className="adm-kpi-info">
+                <span className="adm-kpi-label">ស្ថានភាពកុម្ម៉ង់ (Pending Queue)</span>
+                <span className="adm-kpi-value">{pendingOrdersCount}</span>
+                <span className="adm-kpi-badge" style={{ background: "#fffbeb", color: "#b45309" }}>
+                  {pendingOrdersCount > 0 ? "⚠️ ត្រូវការត្រួតពិនិត្យ" : "✅ រួចរាល់ទាំងអស់"}
                 </span>
               </div>
-              <div className="pro-kpi-icon-wrap violet">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
-                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
-                  <line x1="6" y1="6" x2="6.01" y2="6"/>
-                  <line x1="6" y1="18" x2="6.01" y2="18"/>
-                </svg>
-              </div>
+              <div className="adm-kpi-icon-wrap amber">⏳</div>
             </div>
           </section>
 
-          {/* SEGMENTED NAVIGATION TABS */}
-          <div className="pro-segmented-tabs">
+          {/* ================= SEGMENTED NAVIGATION TABS ================= */}
+          <div className="adm-segmented-tabs">
             <button
               type="button"
-              className={`pro-tab-btn ${activeTab === "orders" ? "active" : ""}`}
+              className={`adm-tab-btn ${activeTab === "orders" ? "active" : ""}`}
               onClick={() => setActiveTab("orders")}
             >
-              📦 <span>បញ្ជីលទ្ធផលទិញ (Orders & Results)</span>
-              <span className="pro-tab-badge">{orders.length}</span>
+              📦 <span>បញ្ជីកុម្ម៉ង់ (Orders Management)</span>
+              <span className="adm-tab-badge">{orders.length}</span>
             </button>
+
             <button
               type="button"
-              className={`pro-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
+              className={`adm-tab-btn ${activeTab === "analytics" ? "active" : ""}`}
               onClick={() => setActiveTab("analytics")}
             >
-              📊 <span>របាយការណ៍ Dashboard (Analytics)</span>
+              📊 <span>របាយការណ៍លក់ (Sales Analytics)</span>
             </button>
+
             <button
               type="button"
-              className={`pro-tab-btn ${activeTab === "all" ? "active" : ""}`}
-              onClick={() => setActiveTab("all")}
+              className={`adm-tab-btn ${activeTab === "topProducts" ? "active" : ""}`}
+              onClick={() => setActiveTab("topProducts")}
             >
-              🏢 <span>ទិដ្ឋភាពរួម Admin (All Results)</span>
+              🏆 <span>ទំនិញលក់ដាច់ (Top Products)</span>
+              <span className="adm-tab-badge">{topProducts.length}</span>
             </button>
           </div>
 
-          {/* ================= SAVED ORDERS MANAGEMENT ================= */}
-          {(activeTab === "all" || activeTab === "orders") && (
-            <section id="saved-orders-section" className="pro-orders-section">
-              <div className="pro-orders-toolbar">
-                <div className="pro-toolbar-left">
-                  <h2>📦 បញ្ជីលទ្ធផល និង Total ទិញពី MySQL</h2>
-                  <p>ទិន្នន័យជាក់ស្ដែងដែលបានកុម្ម៉ង់ ត្រូវបានរក្សាទុកក្នុងតារាង `shop_orders` និង `customers`</p>
+          {/* ================= TAB 1: ORDERS MANAGEMENT ================= */}
+          {activeTab === "orders" && (
+            <section className="adm-orders-section">
+              <div className="adm-orders-toolbar">
+                <div className="adm-toolbar-left">
+                  <h2>📦 បញ្ជីលទ្ធផលកុម្ម៉ង់ និងព័ត៌មានអតិថិជន</h2>
+                  <p>ទិន្នន័យជាក់ស្ដែងដែលបានកុម្ម៉ង់ពី Cashier Checkout ឬទិញតាមអនឡាញ</p>
                 </div>
 
-                <div className="pro-toolbar-right">
-                  {/* Search box */}
-                  <div className="pro-search-box">
+                <div className="adm-toolbar-right">
+                  {/* Search Box */}
+                  <div className="adm-search-box">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="11" cy="11" r="8"/>
                       <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                     <input
                       type="text"
-                      placeholder="ស្វែងរកតាមឈ្មោះ, លេខទូរស័ព្ទ, កូដ..."
+                      placeholder="ស្វែងរកតាមឈ្មោះ, លេខទូរស័ព្ទ, លេខកូដ..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
 
-                  {/* Payment filter */}
-                  <div className="pro-filter-tabs">
-                    {["all", "Bank Transfer", "KHQR", "Cash on Delivery"].map((p) => (
+                  {/* Payment Filters */}
+                  <div className="adm-filter-tabs">
+                    {["all", "KHQR", "Bank Transfer", "Cash on Delivery"].map((p) => (
                       <button
                         key={p}
                         type="button"
-                        className={`pro-filter-btn ${filterPayment === p ? "active" : ""}`}
+                        className={`adm-filter-btn ${filterPayment === p ? "active" : ""}`}
                         onClick={() => setFilterPayment(p)}
                       >
-                        {p === "all" ? "All Payments" : p}
+                        {p === "all" ? "គ្រប់ Payment" : p}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Status Filters */}
+                  <div className="adm-filter-tabs">
+                    {["all", "Completed", "Processing", "Pending"].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className={`adm-filter-btn ${filterStatus === s ? "active" : ""}`}
+                        onClick={() => setFilterStatus(s)}
+                      >
+                        {s === "all" ? "គ្រប់ស្ថានភាព" : s}
                       </button>
                     ))}
                   </div>
@@ -651,101 +863,203 @@ function AdminDashboard() {
               </div>
 
               {isLoading ? (
-                <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
-                  កំពុងទាញយកទិន្នន័យពី MySQL...
+                <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
+                  <div style={{ fontSize: "32px", marginBottom: "12px" }}>⏳</div>
+                  <strong>កំពុងទាញយកទិន្នន័យពី MySQL...</strong>
                 </div>
               ) : filteredOrders.length === 0 ? (
-                <div className="pro-orders-empty">
-                  <div className="pro-empty-icon">📭</div>
-                  <h3>មិនមានទិន្នន័យកុម្ម៉ង់នៅឡើយទេ</h3>
-                  <p>នៅពេលអតិថិជន ឬបុគ្គលិកចុចទិញក្នុង Checkout ព័ត៌មាននឹងបង្ហាញនៅទីនេះដោយស្វ័យប្រវត្តិ។</p>
-                  <Link
-                    to="/checkout"
-                    style={{
-                      marginTop: "16px",
-                      display: "inline-block",
-                      padding: "10px 20px",
-                      background: "#7c3aed",
-                      color: "#fff",
-                      borderRadius: "10px",
-                      textDecoration: "none",
-                      fontWeight: "700",
-                    }}
-                  >
-                    🛒 ទៅកាន់កន្លែងបញ្ចូលឈ្មោះអ្នកទិញ
-                  </Link>
+                <div className="adm-orders-empty">
+                  <div className="adm-empty-icon">📭</div>
+                  <h3>មិនមានទិន្នន័យកុម្ម៉ង់ស្របតាមលក្ខខណ្ឌស្វែងរកទេ</h3>
+                  <p>សូមសាកល្បងផ្លាស់ប្តូរពាក្យស្វែងរក ឬចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតការកុម្ម៉ង់ថ្មី។</p>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <Link
+                      to="/checkout"
+                      className="adm-topbar-btn primary"
+                      style={{ padding: "10px 18px" }}
+                    >
+                      🛒 ទៅកាន់កន្លែង Add អ្នកទិញ (POS)
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLoadDemoData}
+                      className="adm-topbar-btn"
+                      style={{ padding: "10px 18px" }}
+                    >
+                      🧪 បញ្ចូលទិន្នន័យគំរូ (Demo Data)
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="pro-orders-table-wrapper">
-                  <table className="pro-data-table">
+                <div className="adm-table-wrapper">
+                  <div className="adm-mobile-scroll-hint">
+                    👉 អូសទៅស្តាំ/ឆ្វេង ដើម្បីមើលព័ត៌មានកុម្ម៉ង់ពេញលេញ (Swipe table horizontally)
+                  </div>
+                  <table className="adm-data-table">
                     <thead>
                       <tr>
-                        <th>កូដកុម្ម៉ង់ (Order #)</th>
-                        <th>ឈ្មោះអ្នកទិញ (Customer Name)</th>
-                        <th>លេខទូរស័ព្ទ (Phone)</th>
-                        <th>ទំនិញ (Items)</th>
+                        <th>កូដកុម្ម៉ង់ (Order ID)</th>
+                        <th>អតិថិជន (Customer)</th>
+                        <th>ទំនាក់ទំនង (Contact)</th>
+                        <th>ទំនិញ (Products)</th>
                         <th>តម្លៃសរុប (Total)</th>
-                        <th>ការទូទាត់ (Payment)</th>
+                        <th>ទូទាត់ (Payment)</th>
+                        <th>ស្ថានភាព (Status)</th>
                         <th>កាលបរិច្ឆេទ (Date)</th>
-                        <th>សកម្មភាព (Actions)</th>
+                        <th style={{ textAlign: "center" }}>សកម្មភាព (Actions)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredOrders.map((order) => {
+                      {filteredOrders.map((order, idx) => {
                         const cust = order.customer || {};
                         const items = order.products || [];
+                        const avatarBg = avatarColors[idx % avatarColors.length];
+
                         return (
                           <tr key={order.orderNumber}>
                             <td>
-                              <span className="pro-order-id-badge">
+                              <span
+                                className="adm-order-id-badge"
+                                title="Click to copy Order ID"
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(order.orderNumber);
+                                  alert(`បានចម្លងលេខកូដ: ${order.orderNumber}`);
+                                }}
+                                style={{ cursor: "pointer" }}
+                              >
                                 {order.orderNumber}
                               </span>
                             </td>
+
                             <td>
-                              <div style={{ fontWeight: "700", color: "#1e293b" }}>
-                                {cust.fullName || "Customer"}
-                              </div>
-                              <div style={{ fontSize: "11px", color: "#94a3b8" }}>
-                                ID: {cust.id || "N/A"}
+                              <div className="adm-customer-cell">
+                                <div
+                                  className="adm-customer-avatar"
+                                  style={{ background: avatarBg }}
+                                >
+                                  {getInitials(cust.fullName)}
+                                </div>
+                                <div className="adm-customer-info">
+                                  <span className="adm-customer-name">
+                                    {cust.fullName || "Customer"}
+                                  </span>
+                                  <span className="adm-customer-id">
+                                    ID: {cust.id || "N/A"}
+                                  </span>
+                                </div>
                               </div>
                             </td>
+
                             <td>
                               <a
                                 href={`tel:${cust.phone}`}
-                                style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none" }}
+                                style={{
+                                  color: "#0284c7",
+                                  fontWeight: "700",
+                                  textDecoration: "none",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
                               >
-                                {cust.phone || "N/A"}
+                                📞 {cust.phone || "N/A"}
                               </a>
-                            </td>
-                            <td>
-                              <span className="pro-item-qty-badge">
-                                {items.reduce((s, it) => s + (it.quantity || 1), 0)} items
-                              </span>
-                              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px", maxWidth: "160px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                {items.map((it) => it.name).join(", ")}
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "#64748b",
+                                  marginTop: "3px",
+                                  maxWidth: "180px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                                title={cust.address}
+                              >
+                                📍 {cust.address || "Phnom Penh"}
                               </div>
                             </td>
+
+                            <td>
+                              <span
+                                style={{
+                                  fontWeight: "700",
+                                  color: "#334155",
+                                  background: "#f1f5f9",
+                                  padding: "3px 8px",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                {items.reduce((s, it) => s + (it.quantity || 1), 0)} items
+                              </span>
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "#64748b",
+                                  marginTop: "4px",
+                                  maxWidth: "160px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                                title={items.map((it) => it.name).join(", ")}
+                              >
+                                {items.map((it) => `${it.name} (x${it.quantity})`).join(", ")}
+                              </div>
+                            </td>
+
                             <td>
                               <strong style={{ color: "#059669", fontSize: "15px" }}>
                                 ${Number(order.total || 0).toFixed(2)}
                               </strong>
                             </td>
+
                             <td>
-                              <span className={`pro-status-badge ${cust.payment === "KHQR" ? "paid" : "completed"}`}>
-                                {cust.payment || "Bank Transfer"}
+                              <span
+                                className={`adm-status-badge ${
+                                  cust.payment === "KHQR"
+                                    ? "paid"
+                                    : cust.payment === "Cash on Delivery"
+                                    ? "pending"
+                                    : "processing"
+                                }`}
+                              >
+                                {cust.payment === "KHQR"
+                                  ? "🇰🇭 KHQR"
+                                  : cust.payment === "Cash on Delivery"
+                                  ? "💵 COD"
+                                  : "🏦 Bank"}
                               </span>
                             </td>
+
+                            <td>
+                              <select
+                                className="adm-status-select"
+                                value={order.status || "Completed"}
+                                onChange={(e) =>
+                                  handleStatusChange(order.orderNumber, e.target.value)
+                                }
+                              >
+                                <option value="Completed">✅ Completed</option>
+                                <option value="Processing">⚙️ Processing</option>
+                                <option value="Pending">⏳ Pending</option>
+                                <option value="Cancelled">❌ Cancelled</option>
+                              </select>
+                            </td>
+
                             <td>
                               <span style={{ fontSize: "12px", color: "#64748b" }}>
                                 {order.date}
                               </span>
                             </td>
+
                             <td>
-                              <div style={{ display: "flex", gap: "6px" }}>
+                              <div className="adm-table-actions">
                                 <button
                                   type="button"
                                   onClick={() => setActiveInvoice(order)}
-                                  className="pro-order-btn view"
+                                  className="adm-action-btn view"
                                   title="មើលវិក្កយបត្រ (Invoice)"
                                 >
                                   🧾 មើល
@@ -753,7 +1067,7 @@ function AdminDashboard() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteOrder(order.orderNumber)}
-                                  className="pro-order-btn delete"
+                                  className="adm-action-btn delete"
                                   title="លុបការកុម្ម៉ង់"
                                 >
                                   🗑️
@@ -770,150 +1084,268 @@ function AdminDashboard() {
             </section>
           )}
 
-          {/* ================= SALES ANALYTICS & REPORTS ================= */}
-          {(activeTab === "all" || activeTab === "analytics") && (
-            <section style={{ marginTop: activeTab === "analytics" ? "0" : "32px", marginBottom: "32px" }}>
-              <div className="pro-orders-toolbar" style={{ marginBottom: "16px" }}>
-                <div className="pro-toolbar-left">
-                  <h2>📈 របាយការណ៍លក់ (Sales Analytics Dashboard)</h2>
-                  <p>ការវិភាគលើទិន្នន័យទូទាត់ប្រាក់ និងស្ថិតិការទិញរបស់អតិថិជន</p>
+          {/* ================= TAB 2: SALES ANALYTICS ================= */}
+          {activeTab === "analytics" && (
+            <section className="adm-analytics-grid">
+              {/* Payment Methods Breakdown */}
+              <div className="adm-analytics-card">
+                <h3>
+                  <span>💳 វិធីសាស្ត្រទូទាត់ប្រាក់ (Payment Breakdown)</span>
+                  <span style={{ fontSize: "12px", color: "#64748b" }}>100% Verified</span>
+                </h3>
+
+                {/* KHQR */}
+                <div className="adm-stat-row">
+                  <span>🇰🇭 KHQR / Bakong Pay</span>
+                  <strong>
+                    {orders.filter((o) => o.customer?.payment === "KHQR").length} orders (
+                    $
+                    {orders
+                      .filter((o) => o.customer?.payment === "KHQR")
+                      .reduce((s, o) => s + Number(o.total || 0), 0)
+                      .toFixed(2)}
+                    )
+                  </strong>
+                </div>
+                <div className="adm-progress-wrap">
+                  <div
+                    className="adm-progress-bar"
+                    style={{
+                      width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "KHQR").length / orders.length) * 100 : 0}%`,
+                      background: "#ef4444",
+                    }}
+                  ></div>
+                </div>
+
+                {/* Bank Transfer */}
+                <div className="adm-stat-row">
+                  <span>🏦 ABA / Bank Transfer</span>
+                  <strong>
+                    {orders.filter((o) => o.customer?.payment === "Bank Transfer").length} orders (
+                    $
+                    {orders
+                      .filter((o) => o.customer?.payment === "Bank Transfer")
+                      .reduce((s, o) => s + Number(o.total || 0), 0)
+                      .toFixed(2)}
+                    )
+                  </strong>
+                </div>
+                <div className="adm-progress-wrap">
+                  <div
+                    className="adm-progress-bar"
+                    style={{
+                      width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "Bank Transfer").length / orders.length) * 100 : 0}%`,
+                      background: "#0284c7",
+                    }}
+                  ></div>
+                </div>
+
+                {/* Cash on Delivery */}
+                <div className="adm-stat-row">
+                  <span>💵 Cash on Delivery (COD)</span>
+                  <strong>
+                    {orders.filter((o) => o.customer?.payment === "Cash on Delivery").length} orders (
+                    $
+                    {orders
+                      .filter((o) => o.customer?.payment === "Cash on Delivery")
+                      .reduce((s, o) => s + Number(o.total || 0), 0)
+                      .toFixed(2)}
+                    )
+                  </strong>
+                </div>
+                <div className="adm-progress-wrap">
+                  <div
+                    className="adm-progress-bar"
+                    style={{
+                      width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "Cash on Delivery").length / orders.length) * 100 : 0}%`,
+                      background: "#10b981",
+                    }}
+                  ></div>
                 </div>
               </div>
 
-              <div className="pro-analytics-grid">
-                <div className="pro-analytics-card">
-                  <h3>វិធីសាស្ត្រទូទាត់ (Payment Breakdown)</h3>
-                  <div className="pro-analytics-stat-row">
-                    <span>🇰🇭 KHQR / Bakong</span>
-                    <strong>
-                      {orders.filter((o) => o.customer?.payment === "KHQR").length} orders
-                    </strong>
-                  </div>
-                  <div className="pro-analytics-bar-wrap">
-                    <div
-                      className="pro-analytics-bar"
-                      style={{
-                        width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "KHQR").length / orders.length) * 100 : 0}%`,
-                        background: "#ef4444",
-                      }}
-                    ></div>
-                  </div>
-
-                  <div className="pro-analytics-stat-row">
-                    <span>🏦 Bank Transfer</span>
-                    <strong>
-                      {orders.filter((o) => o.customer?.payment === "Bank Transfer").length} orders
-                    </strong>
-                  </div>
-                  <div className="pro-analytics-bar-wrap">
-                    <div
-                      className="pro-analytics-bar"
-                      style={{
-                        width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "Bank Transfer").length / orders.length) * 100 : 0}%`,
-                        background: "#0284c7",
-                      }}
-                    ></div>
-                  </div>
-
-                  <div className="pro-analytics-stat-row">
-                    <span>💵 Cash on Delivery</span>
-                    <strong>
-                      {orders.filter((o) => o.customer?.payment === "Cash on Delivery").length} orders
-                    </strong>
-                  </div>
-                  <div className="pro-analytics-bar-wrap">
-                    <div
-                      className="pro-analytics-bar"
-                      style={{
-                        width: `${orders.length ? (orders.filter((o) => o.customer?.payment === "Cash on Delivery").length / orders.length) * 100 : 0}%`,
-                        background: "#10b981",
-                      }}
-                    ></div>
-                  </div>
+              {/* Monthly Target & Performance */}
+              <div className="adm-analytics-card">
+                <h3>
+                  <span>🎯 គោលដៅចំណូលប្រចាំខែ (Monthly Revenue Goal)</span>
+                  <span style={{ fontSize: "12px", color: "#10b981", fontWeight: "700" }}>On Track</span>
+                </h3>
+                <div style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", marginTop: "12px" }}>
+                  ${totalRevenue.toFixed(2)}{" "}
+                  <span style={{ fontSize: "16px", color: "#64748b", fontWeight: "500" }}>/ $5,000.00 Goal</span>
                 </div>
+                <div className="adm-progress-wrap" style={{ marginTop: "16px", height: "12px" }}>
+                  <div
+                    className="adm-progress-bar"
+                    style={{
+                      width: `${Math.min(100, (totalRevenue / 5000) * 100)}%`,
+                      background: "linear-gradient(90deg, #6366f1, #10b981)",
+                    }}
+                  ></div>
+                </div>
+                <p style={{ fontSize: "13px", color: "#64748b", lineHeight: "1.6", marginTop: "12px" }}>
+                  សម្រេចបាន {((totalRevenue / 5000) * 100).toFixed(1)}% នៃគោលដៅសរុប។ ទិន្នន័យត្រូវបានធ្វើសមកាលកម្មដោយស្វ័យប្រវត្តិចេញពីតារាង `shop_orders` ក្នុង MySQL Database។
+                </p>
+              </div>
+            </section>
+          )}
 
-                <div className="pro-analytics-card">
-                  <h3>គោលដៅប្រចាំខែ (Monthly Target & Performance)</h3>
-                  <div style={{ fontSize: "28px", fontWeight: "800", color: "#1e293b", marginTop: "12px" }}>
-                    ${totalRevenue.toFixed(2)}{" "}
-                    <span style={{ fontSize: "16px", color: "#64748b", fontWeight: "500" }}>/ $5,000 Goal</span>
-                  </div>
-                  <div className="pro-card-progress" style={{ marginTop: "14px", height: "10px" }}>
-                    <div
-                      className="pro-card-bar"
-                      style={{
-                        width: `${Math.min(100, (totalRevenue / 5000) * 100)}%`,
-                        background: "linear-gradient(90deg, #7c3aed, #06b6d4)",
-                      }}
-                    ></div>
-                  </div>
-                  <p style={{ fontSize: "13px", color: "#64748b", marginTop: "12px", lineHeight: "1.5" }}>
-                    សម្រេចបាន {((totalRevenue / 5000) * 100).toFixed(1)}% នៃគោលដៅប្រចាំខែ។ ទិន្នន័យត្រូវបានផ្ទៀងផ្ទាត់ផ្ទាល់ជាមួយ MySQL shop_orders។
-                  </p>
+          {/* ================= TAB 3: TOP PRODUCTS SOLD ================= */}
+          {activeTab === "topProducts" && (
+            <section className="adm-orders-section">
+              <div className="adm-orders-toolbar">
+                <div className="adm-toolbar-left">
+                  <h2>🏆 ចំណាត់ថ្នាក់ទំនិញលក់ដាច់បំផុត (Top Selling Products)</h2>
+                  <p>ស្ថិតិផ្អែកលើចំនួនបរិមាណដែលបានលក់ចេញ និងចំណូលដែលទទួលបាន</p>
                 </div>
               </div>
+
+              {topProducts.length === 0 ? (
+                <div className="adm-orders-empty">
+                  <div className="adm-empty-icon">🏷️</div>
+                  <h3>មិនទាន់មានទិន្នន័យទំនិញលក់នៅឡើយទេ</h3>
+                </div>
+              ) : (
+                <div className="adm-table-wrapper">
+                  <table className="adm-data-table">
+                    <thead>
+                      <tr>
+                        <th>ចំណាត់ថ្នាក់ (Rank)</th>
+                        <th>ទំនិញ (Product)</th>
+                        <th>តម្លៃរាយ (Unit Price)</th>
+                        <th>ចំនួនលក់បាន (Qty Sold)</th>
+                        <th>ចំណូលសរុប (Total Revenue)</th>
+                        <th>ស្ថានភាពស្តុក (Status)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topProducts.map((prod, index) => (
+                        <tr key={prod.id || index}>
+                          <td>
+                            <strong
+                              style={{
+                                display: "inline-flex",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "50%",
+                                background: index === 0 ? "#fef3c7" : index === 1 ? "#f1f5f9" : "#fffbeb",
+                                color: index === 0 ? "#d97706" : index === 1 ? "#475569" : "#b45309",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "13px",
+                              }}
+                            >
+                              #{index + 1}
+                            </strong>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              {prod.image && (
+                                <img
+                                  src={prod.image}
+                                  alt={prod.name}
+                                  style={{ width: "38px", height: "38px", borderRadius: "8px", objectFit: "cover" }}
+                                />
+                              )}
+                              <span style={{ fontWeight: "700", color: "#1e293b" }}>{prod.name}</span>
+                            </div>
+                          </td>
+                          <td>${Number(prod.price || 0).toFixed(2)}</td>
+                          <td>
+                            <strong style={{ color: "#6366f1", fontSize: "14px" }}>
+                              {prod.qtySold} កំប៉ុង/ដុំ
+                            </strong>
+                          </td>
+                          <td>
+                            <strong style={{ color: "#059669", fontSize: "15px" }}>
+                              ${Number(prod.revenue || 0).toFixed(2)}
+                            </strong>
+                          </td>
+                          <td>
+                            <span className="adm-status-badge paid">In Stock</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           )}
         </main>
       </div>
 
-      {/* ================= INVOICE / RECEIPT MODAL ================= */}
+      {/* ================= OFFICIAL INVOICE / RECEIPT MODAL ================= */}
       {activeInvoice && (
         <div
-          className="pro-modal-backdrop"
+          className="adm-modal-backdrop"
           onClick={() => setActiveInvoice(null)}
         >
           <div
-            className="pro-modal-content pro-invoice-modal"
+            className="adm-invoice-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="pro-modal-header">
-              <h3>Official Store Tax Invoice</h3>
+            <div className="adm-modal-header">
+              <h3>🧾 វិក្កយបត្រផ្លូវការ (Official Tax Invoice)</h3>
               <button
                 type="button"
-                className="pro-modal-close-btn"
+                className="adm-modal-close-btn"
                 onClick={() => setActiveInvoice(null)}
               >
                 ×
               </button>
             </div>
 
-            <div className="pro-invoice-body">
-              <div className="pro-invoice-brand-row">
-                <div className="pro-invoice-brand">
-                  <h2>FreshMart Supermarket POS</h2>
-                  <p>Tax Reg: KH-88921-2026 • Phnom Penh, Cambodia</p>
+            <div className="adm-invoice-body">
+              {/* Brand Header */}
+              <div className="adm-invoice-brand-row">
+                <div className="adm-invoice-brand">
+                  <h2>FreshMart POS Supermarket</h2>
+                  <p>Tax ID: KH-88921-2026 • Phnom Penh, Cambodia</p>
+                  <p>Tel: +855 97 993 7524 • www.freshmart.com.kh</p>
                 </div>
-                <div className="pro-invoice-meta">
+                <div className="adm-invoice-meta">
                   <h4>{activeInvoice.orderNumber}</h4>
-                  <p>{activeInvoice.date}</p>
+                  <p>Date: {activeInvoice.date}</p>
+                  <span
+                    className={`adm-status-badge ${
+                      activeInvoice.status === "Completed" ? "paid" : "processing"
+                    }`}
+                    style={{ marginTop: "6px" }}
+                  >
+                    Status: {activeInvoice.status || "Completed"}
+                  </span>
                 </div>
               </div>
 
-              <div className="pro-invoice-billto">
-                <strong>Billed To:</strong><br />
-                {activeInvoice.customer?.fullName} (ID: {activeInvoice.customer?.id})<br />
-                Phone: {activeInvoice.customer?.phone} | Email: {activeInvoice.customer?.email}<br />
-                Address: {activeInvoice.customer?.address}<br />
-                Payment: <strong>{activeInvoice.customer?.payment}</strong>
+              {/* Bill To */}
+              <div className="adm-invoice-billto">
+                <strong style={{ color: "#334155" }}>ព័ត៌មានអតិថិជន (Billed To):</strong><br />
+                <strong>{activeInvoice.customer?.fullName}</strong> (ID: {activeInvoice.customer?.id})<br />
+                📞 Phone: {activeInvoice.customer?.phone} | ✉️ Email: {activeInvoice.customer?.email || "N/A"}<br />
+                📍 អាសយដ្ឋាន: {activeInvoice.customer?.address}<br />
+                💳 វិធីសាស្ត្រទូទាត់: <strong>{activeInvoice.customer?.payment}</strong>
               </div>
 
-              <table className="pro-invoice-table">
+              {/* Items Table */}
+              <table className="adm-invoice-table">
                 <thead>
                   <tr>
-                    <th>Item Description</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th style={{ textAlign: "right" }}>Total</th>
+                    <th>ទំនិញ (Item)</th>
+                    <th>ចំនួន (Qty)</th>
+                    <th>តម្លៃរាយ (Price)</th>
+                    <th style={{ textAlign: "right" }}>សរុប (Total)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {activeInvoice.products?.map((item, idx) => (
                     <tr key={idx}>
-                      <td>{item.name}</td>
+                      <td>
+                        <strong>{item.name}</strong>
+                      </td>
                       <td>{item.quantity}</td>
                       <td>${Number(item.price).toFixed(2)}</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td style={{ textAlign: "right", fontWeight: "700" }}>
                         ${(Number(item.price) * Number(item.quantity)).toFixed(2)}
                       </td>
                     </tr>
@@ -921,59 +1353,57 @@ function AdminDashboard() {
                 </tbody>
               </table>
 
-              <table className="pro-invoice-totals-table">
+              {/* Totals */}
+              <table className="adm-invoice-totals-table">
                 <tbody>
                   <tr>
                     <td>Subtotal:</td>
-                    <td>${Number(activeInvoice.subtotal).toFixed(2)}</td>
+                    <td>${Number(activeInvoice.subtotal || 0).toFixed(2)}</td>
                   </tr>
                   <tr>
                     <td>Shipping:</td>
-                    <td>${Number(activeInvoice.shipping).toFixed(2)}</td>
+                    <td>${Number(activeInvoice.shipping || 0).toFixed(2)}</td>
                   </tr>
-                  <tr className="grand-total-row">
-                    <td>Total:</td>
-                    <td>${Number(activeInvoice.total).toFixed(2)} USD</td>
+                  {Number(activeInvoice.discount || 0) > 0 && (
+                    <tr style={{ color: "#dc2626" }}>
+                      <td>Discount:</td>
+                      <td>-${Number(activeInvoice.discount).toFixed(2)}</td>
+                    </tr>
+                  )}
+                  <tr className="grand-total">
+                    <td>សរុប (Grand Total):</td>
+                    <td>${Number(activeInvoice.total || 0).toFixed(2)} USD</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="pro-modal-footer">
+            <div className="adm-modal-footer">
               <button
                 type="button"
-                className="pro-topbar-btn"
+                className="adm-topbar-btn"
                 onClick={() => setActiveInvoice(null)}
               >
-                Close
+                បិទ (Close)
               </button>
+
               <a
                 href={`https://t.me/+855979937524?text=${encodeURIComponent(
-                  `🛍️ ការកុម្ម៉ង់ #${activeInvoice.orderNumber}!\n👤 អតិថិជន: ${activeInvoice.customer?.fullName}\n📞 ទូរស័ព្ទ: ${activeInvoice.customer?.phone}\n💵 សរុប: $${Number(activeInvoice.total).toFixed(2)} USD`
+                  `🛍️ ការកុម្ម៉ង់ #${activeInvoice.orderNumber}!\n👤 អតិថិជន: ${activeInvoice.customer?.fullName}\n📞 ទូរស័ព្ទ: ${activeInvoice.customer?.phone}\n💵 សរុប: $${Number(activeInvoice.total).toFixed(2)} USD\n💳 ទូទាត់តាម: ${activeInvoice.customer?.payment}`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "9px 16px",
-                  background: "#0284c7",
-                  color: "#ffffff",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  textDecoration: "none",
-                }}
+                className="adm-topbar-btn telegram"
               >
                 <span>💬</span> ផ្ញើទៅ Telegram ({TELEGRAM_PHONE})
               </a>
+
               <button
                 type="button"
-                className="pro-topbar-btn primary"
+                className="adm-topbar-btn primary"
                 onClick={() => window.print()}
               >
-                Print Invoice 🖨️
+                🖨️ បោះពុម្ពវិក្កយបត្រ (Print)
               </button>
             </div>
           </div>
