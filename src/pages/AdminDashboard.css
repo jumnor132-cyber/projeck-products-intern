@@ -156,16 +156,16 @@
 
 .adm-lock-input {
   width: 100%;
-  padding: 16px 20px;
+  padding: 13px 16px;
   border-radius: var(--adm-radius-md);
   border: 1.5px solid var(--adm-border);
-  font-size: 24px;
-  letter-spacing: 8px;
-  text-align: center;
+  font-size: 15px;
+  letter-spacing: normal;
+  text-align: left;
   outline: none;
   box-sizing: border-box;
   font-family: inherit;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--adm-text-main);
   background: #f8fafc;
   transition: all 0.2s ease;
@@ -1714,8 +1714,8 @@
     font-size: 20px;
   }
   .adm-lock-input {
-    font-size: 20px;
-    letter-spacing: 6px;
+    font-size: 14px;
+    letter-spacing: normal;
     padding: 12px 14px;
   }
 }

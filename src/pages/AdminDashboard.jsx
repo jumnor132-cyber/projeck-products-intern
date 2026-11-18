@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import "./AdminDashboard.css";
 
 const API_URL = "http://localhost/productcode/ApI.php";
+const AUTH_BASE_URL = "http://localhost/productcode";
 const TELEGRAM_PHONE = "0979937524";
 const TELEGRAM_CHAT_URL = "https://t.me/+855979937524";
 
@@ -100,12 +101,15 @@ function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Authentication PIN state (Default PIN: 1234 or admin)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem("admin_authenticated") === "true";
-  });
-  const [pinInput, setPinInput] = useState("");
+  // PHP Session Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [adminUser, setAdminUser] = useState(null);
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [pinError, setPinError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Navigation & View Filters
   const [activeTab, setActiveTab] = useState("orders"); // "orders" | "analytics" | "topProducts"
@@ -226,26 +230,151 @@ function AdminDashboard() {
     }
   };
 
+  // Verify Admin Session on component mount
   useEffect(() => {
-    fetchOrders();
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "0.0.0.0");
+
+    if (isLocal) {
+      // Local environment: verify with PHP Session
+      fetch(`${AUTH_BASE_URL}/check_session.php`, {
+        credentials: "include",
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Not logged in");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data && data.success && data.logged_in) {
+            setIsAuthenticated(true);
+            setAdminUser(data.admin || null);
+          } else {
+            setIsAuthenticated(false);
+            setAdminUser(null);
+          }
+        })
+        .catch(() => {
+          setIsAuthenticated(false);
+          setAdminUser(null);
+        })
+        .finally(() => {
+          setIsCheckingSession(false);
+        });
+    } else {
+      // Cloud environment (e.g. Vercel): verify with cloud session
+      try {
+        const savedSession = sessionStorage.getItem("cloud_admin_user");
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          setIsAuthenticated(true);
+          setAdminUser(parsed);
+        } else {
+          setIsAuthenticated(false);
+          setAdminUser(null);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    }
   }, []);
 
-  // PIN Authentication Handler
-  const handleVerifyPin = (e) => {
+  // Fetch orders when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchOrders();
+    }
+  }, [isAuthenticated]);
+
+  // Unified Login Handler (PHP Session for Local, Secure Admin for Cloud)
+  const handleVerifyPin = async (e) => {
     e.preventDefault();
-    if (pinInput.trim() === "1234" || pinInput.trim() === "admin") {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("admin_authenticated", "true");
-      setPinError("");
-      setPinInput("");
+
+    setPinError("");
+    setIsLoggingIn(true);
+
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "0.0.0.0");
+
+    if (isLocal) {
+      try {
+        const response = await fetch(`${AUTH_BASE_URL}/login.php`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            username: username,
+            password: password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setIsAuthenticated(true);
+          setAdminUser(data.admin || null);
+          setUsername("");
+          setPassword("");
+          setPinError("");
+        } else {
+          setPinError(data.message || "Username ឬ Password មិនត្រឹមត្រូវ!");
+        }
+      } catch (error) {
+        setPinError("មិនអាចភ្ជាប់ទៅកាន់ PHP Server បានទេ!");
+      } finally {
+        setIsLoggingIn(false);
+      }
     } else {
-      setPinError("លេខកូដមិនត្រឹមត្រូវទេ! (Default PIN: 1234)");
+      // Cloud Environment (Vercel)
+      if (username.trim() === "admin" && password === "123456") {
+        const cloudAdmin = { id: 1, username: "admin", role: "admin" };
+        sessionStorage.setItem("cloud_admin_user", JSON.stringify(cloudAdmin));
+        setIsAuthenticated(true);
+        setAdminUser(cloudAdmin);
+        setUsername("");
+        setPassword("");
+        setPinError("");
+      } else {
+        setPinError("Username ឬ Password មិនត្រឹមត្រូវ! (Username: admin, Password: 123456)");
+      }
+      setIsLoggingIn(false);
     }
   };
 
-  const handleLogout = () => {
+  // Unified Logout Handler
+  const handleLogout = async () => {
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "0.0.0.0");
+
+    if (isLocal) {
+      try {
+        await fetch(`${AUTH_BASE_URL}/logout.php`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    } else {
+      sessionStorage.removeItem("cloud_admin_user");
+    }
+
     setIsAuthenticated(false);
-    sessionStorage.removeItem("admin_authenticated");
+    setAdminUser(null);
   };
 
   // Change order status directly
@@ -370,58 +499,86 @@ function AdminDashboard() {
   const avatarColors = ["#6366f1", "#0284c7", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899"];
 
   // ==========================================
-  // PIN AUTHENTICATION GATEWAY
+  // AUTHENTICATION CHECK & GATEWAY
   // ==========================================
+  if (isCheckingSession) {
+    return (
+      <div className="adm-lock-screen">
+        <div className="adm-lock-card">
+          <div className="adm-lock-icon-wrap">🔐</div>
+          <h2 className="adm-lock-title">Checking Admin Session...</h2>
+          <p className="adm-lock-desc">សូមរង់ចាំបន្តិច...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="adm-lock-screen">
         <div className="adm-lock-card">
           <div className="adm-lock-icon-wrap">🔐</div>
+
           <div>
             <span className="adm-lock-badge">Enterprise Admin Gateway</span>
           </div>
+
           <h2 className="adm-lock-title">ផ្ទាំងគ្រប់គ្រង Admin POS</h2>
+
           <p className="adm-lock-desc">
-            សូមផ្ទៀងផ្ទាត់អត្តសញ្ញាណអ្នកគ្រប់គ្រងដើម្បីចូលមើលទិន្នន័យលក់ ចំនួនកុម្ម៉ង់ និងរបាយការណ៍ហិរញ្ញវត្ថុ។
+            សូមបញ្ចូល Username និង Password ដើម្បីចូលប្រើប្រាស់ Admin Dashboard។
           </p>
 
           <form onSubmit={handleVerifyPin}>
             <div className="adm-lock-input-group">
-              <label className="adm-lock-label">បញ្ចូលលេខកូដ PIN សម្ងាត់ (Default: 1234):</label>
+              <label className="adm-lock-label">Username</label>
               <div className="adm-lock-input-wrap">
                 <input
-                  type="password"
+                  type="text"
                   autoFocus
-                  placeholder="••••"
-                  maxLength={6}
-                  value={pinInput}
+                  placeholder="Enter username (e.g. admin)"
+                  value={username}
                   onChange={(e) => {
-                    setPinInput(e.target.value);
+                    setUsername(e.target.value);
                     setPinError("");
                   }}
                   className={`adm-lock-input ${pinError ? "error" : ""}`}
+                  required
                 />
-              </div>
-
-              {pinError && (
-                <div className="adm-lock-error">
-                  <span>⚠️</span> {pinError}
-                </div>
-              )}
-
-              <div style={{ textAlign: "center", marginTop: "12px" }}>
-                <button
-                  type="button"
-                  onClick={() => setPinInput("1234")}
-                  className="adm-lock-hint-btn"
-                >
-                  💡 ចុចទីនេះដើម្បីបំពេញកូដស្វ័យប្រវត្តិ (1234)
-                </button>
               </div>
             </div>
 
-            <button type="submit" className="adm-lock-btn">
-              ចូលផ្ទាំងគ្រប់គ្រង (Unlock Dashboard) →
+            <div className="adm-lock-input-group">
+              <label className="adm-lock-label">Password</label>
+              <div className="adm-lock-input-wrap">
+                <input
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPinError("");
+                  }}
+                  className={`adm-lock-input ${pinError ? "error" : ""}`}
+                  required
+                />
+              </div>
+            </div>
+
+            {pinError && (
+              <div className="adm-lock-error">
+                <span>⚠️</span> {pinError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="adm-lock-btn"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn
+                ? "កំពុងផ្ទៀងផ្ទាត់..."
+                : "ចូលផ្ទាំងគ្រប់គ្រង (Login) →"}
             </button>
           </form>
 
@@ -581,12 +738,16 @@ function AdminDashboard() {
         {/* Current Admin User */}
         <div className="adm-sidebar-user">
           <div className="adm-user-avatar">
-            AD
+            {adminUser?.username ? adminUser.username.slice(0, 2).toUpperCase() : "AD"}
             <span className="adm-user-status-dot"></span>
           </div>
           <div className="adm-user-info">
-            <div className="adm-user-name">អ្នកគ្រប់គ្រង (Admin)</div>
-            <div className="adm-user-role">Super Administrator</div>
+            <div className="adm-user-name">
+              {adminUser?.username ? adminUser.username : "អ្នកគ្រប់គ្រង (Admin)"}
+            </div>
+            <div className="adm-user-role">
+              {adminUser?.role ? adminUser.role.toUpperCase() : "Administrator"}
+            </div>
           </div>
           <button
             type="button"
